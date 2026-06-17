@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>단어카드</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/tabler-icons.min.css" />
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f5f5f3; --surface: #ffffff; --border: rgba(0,0,0,0.12);
+  --border-hover: rgba(0,0,0,0.28); --text: #1a1a19; --text-muted: #6b6b68;
+  --text-hint: #9b9b98; --accent: #534AB7; --accent-dark: #3C3489;
+  --radius-md: 8px; --radius-lg: 12px;
+  --success-bg: #EAF3DE; --success-text: #27500A; --success-border: #3B6D11;
+  --danger-bg: #FCEBEB; --danger-text: #791F1F; --danger-border: #A32D2D;
+  --info-bg: #E6F1FB; --info-text: #0C447C;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1c1a; --surface: #2a2a28; --border: rgba(255,255,255,0.12);
+    --border-hover: rgba(255,255,255,0.28); --text: #f0ede8; --text-muted: #a8a8a4;
+    --text-hint: #6b6b68; --accent: #7F77DD; --accent-dark: #534AB7;
+    --success-bg: #1a2e0d; --success-text: #C0DD97; --success-border: #3B6D11;
+    --danger-bg: #2e0d0d; --danger-text: #F7C1C1; --danger-border: #A32D2D;
+    --info-bg: #0c2242; --info-text: #B5D4F4;
+  }
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+.nav { background: var(--surface); border-bottom: 0.5px solid var(--border); padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 10; }
+.nav-logo { font-size: 18px; font-weight: 500; display: flex; align-items: center; gap: 8px; color: var(--text); }
+.nav-logo i { color: var(--accent); }
+.btn { padding: 6px 14px; border-radius: var(--radius-md); border: 0.5px solid var(--border-hover); background: transparent; cursor: pointer; font-size: 14px; color: var(--text); transition: background 0.15s; font-family: inherit; }
+.btn:hover { background: var(--border); }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+.btn-sm { padding: 4px 10px; font-size: 13px; }
+.btn-danger { border-color: var(--danger-border); color: var(--danger-text); }
+.btn-danger:hover { background: var(--danger-bg); }
+.main { padding: 2rem 1.5rem; max-width: 900px; margin: 0 auto; }
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+.section-title { font-size: 18px; font-weight: 500; }
+.badge { display: inline-block; padding: 2px 10px; border-radius: var(--radius-md); font-size: 12px; background: var(--info-bg); color: var(--info-text); }
+.sets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.set-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; cursor: default; transition: border-color 0.15s; }
+.set-card:hover { border-color: var(--border-hover); }
+.set-card-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+.set-card-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+.set-card-actions { display: flex; gap: 6px; }
+.empty-state { text-align: center; padding: 4rem 1rem; color: var(--text-muted); grid-column: 1/-1; }
+.empty-icon { font-size: 48px; color: var(--text-hint); margin-bottom: 12px; }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border-radius: var(--radius-lg); padding: 1.5rem; width: 500px; max-width: 95vw; max-height: 85vh; overflow-y: auto; }
+.modal-title { font-size: 18px; font-weight: 500; margin-bottom: 1.25rem; }
+.form-group { margin-bottom: 1rem; }
+.form-label { font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 4px; }
+.form-input { width: 100%; padding: 8px 12px; border-radius: var(--radius-md); border: 0.5px solid var(--border-hover); background: var(--surface); color: var(--text); font-size: 14px; font-family: inherit; }
+.form-input:focus { outline: none; border-color: var(--accent); }
+.card-pair { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-bottom: 8px; align-items: center; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; }
+.study-area { display: none; }
+.study-area.open { display: block; }
+.study-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.study-title { font-size: 18px; font-weight: 500; flex: 1; }
+.mode-tabs { display: flex; gap: 6px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.mode-tab { padding: 6px 14px; border-radius: var(--radius-md); border: 0.5px solid var(--border-hover); background: transparent; cursor: pointer; font-size: 14px; color: var(--text-muted); font-family: inherit; transition: background 0.15s; }
+.mode-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.flashcard-wrap { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+.flashcard { width: 100%; max-width: 520px; min-height: 220px; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 2rem; text-align: center; transition: border-color 0.15s; position: relative; }
+.flashcard:hover { border-color: var(--border-hover); }
+.flashcard-side-label { position: absolute; top: 12px; left: 16px; font-size: 12px; color: var(--text-hint); }
+.flashcard-word { font-size: 28px; font-weight: 500; margin-bottom: 8px; }
+.flashcard-sub { font-size: 15px; color: var(--text-muted); }
+.flashcard-hint { font-size: 13px; color: var(--text-hint); margin-top: 12px; }
+.card-nav { display: flex; align-items: center; gap: 16px; }
+.card-progress { font-size: 14px; color: var(--text-muted); }
+.quiz-area { max-width: 520px; margin: 0 auto; }
+.quiz-question { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1rem; text-align: center; }
+.quiz-q-label { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+.quiz-q-word { font-size: 26px; font-weight: 500; }
+.quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+.quiz-option { padding: 12px; border-radius: var(--radius-md); border: 0.5px solid var(--border-hover); background: var(--surface); cursor: pointer; font-size: 14px; color: var(--text); text-align: center; transition: background 0.15s; font-family: inherit; }
+.quiz-option:hover:not(.locked) { background: var(--border); }
+.quiz-option.correct { background: var(--success-bg); border-color: var(--success-border); color: var(--success-text); }
+.quiz-option.wrong { background: var(--danger-bg); border-color: var(--danger-border); color: var(--danger-text); }
+.quiz-score { text-align: center; padding: 2.5rem; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); }
+.quiz-score-num { font-size: 44px; font-weight: 500; color: var(--accent); margin-bottom: 8px; }
+.quiz-score-label { font-size: 15px; color: var(--text-muted); margin-bottom: 1.5rem; }
+.list-view { max-width: 520px; margin: 0 auto; }
+.list-item { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 16px; }
+.list-term { font-weight: 500; font-size: 15px; flex: 1; }
+.list-def { font-size: 14px; color: var(--text-muted); flex: 1; }
+.list-divider { width: 1px; height: 24px; background: var(--border); flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo"><i class="ti ti-cards"></i> 단어카드</div>
+  <button class="btn btn-primary" onclick="openCreateModal()"><i class="ti ti-plus"></i> 새 세트</button>
+</nav>
+
+<div class="main">
+  <div id="home-section">
+    <div class="section-header">
+      <div class="section-title">내 단어 세트</div>
+      <span id="set-count-badge" class="badge">0개</span>
+    </div>
+    <div class="sets-grid" id="sets-grid">
+      <div class="empty-state">
+        <div class="empty-icon"><i class="ti ti-cards"></i></div>
+        <div>아직 단어 세트가 없습니다.<br>새 세트를 만들어 시작하세요!</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="study-area" id="study-area">
+    <div class="study-header">
+      <button class="btn btn-sm" onclick="backToHome()"><i class="ti ti-arrow-left"></i> 목록</button>
+      <div class="study-title" id="study-title"></div>
+      <span class="badge" id="study-badge"></span>
+    </div>
+    <div class="mode-tabs">
+      <button class="mode-tab active" onclick="setMode('flash')" id="tab-flash"><i class="ti ti-cards"></i> 플래시카드</button>
+      <button class="mode-tab" onclick="setMode('quiz')" id="tab-quiz"><i class="ti ti-list-check"></i> 퀴즈</button>
+      <button class="mode-tab" onclick="setMode('list')" id="tab-list"><i class="ti ti-layout-list"></i> 목록</button>
+    </div>
+    <div id="mode-content"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="create-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">새 단어 세트 만들기</div>
+    <div class="form-group">
+      <label class="form-label">세트 이름</label>
+      <input class="form-input" id="set-name-input" placeholder="예: 영어 단어 Day 1" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">단어 카드 (용어 / 뜻)</label>
+      <div id="card-pairs-container"></div>
+      <button class="btn btn-sm" onclick="addCardPair()" style="margin-top:8px;"><i class="ti ti-plus"></i> 카드 추가</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeCreateModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveSet()">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let sets = [], currentSetIndex = -1, currentMode = 'flash';
+let cardIndex = 0, flipped = false, quizState = null, editingIndex = -1;
+
+function loadSets() {
+  try { const d = localStorage.getItem('flashcard_sets'); if (d) sets = JSON.parse(d); } catch(e) {}
+  renderSets();
+}
+function saveSets() { localStorage.setItem('flashcard_sets', JSON.stringify(sets)); }
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function renderSets() {
+  const grid = document.getElementById('sets-grid');
+  document.getElementById('set-count-badge').textContent = sets.length + '개';
+  if (sets.length === 0) {
+    grid.innerHTML = '<div class="empty-state"><div class="empty-icon"><i class="ti ti-cards"></i></div><div>아직 단어 세트가 없습니다.<br>새 세트를 만들어 시작하세요!</div></div>';
+    return;
+  }
+  grid.innerHTML = sets.map((s, i) => `
+    <div class="set-card">
+      <div class="set-card-title">${esc(s.name)}</div>
+      <div class="set-card-meta">${s.cards.length}개 단어</div>
+      <div class="set-card-actions">
+        <button class="btn btn-sm" onclick="studySet(${i})"><i class="ti ti-player-play"></i> 학습</button>
+        <button class="btn btn-sm" onclick="editSet(${i})"><i class="ti ti-edit"></i></button>
+        <button class="btn btn-sm btn-danger" onclick="deleteSet(${i})"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`).join('');
+}
+
+function openCreateModal() {
+  editingIndex = -1;
+  document.getElementById('modal-title').textContent = '새 단어 세트 만들기';
+  document.getElementById('set-name-input').value = '';
+  document.getElementById('card-pairs-container').innerHTML = '';
+  addCardPair(); addCardPair(); addCardPair();
+  document.getElementById('create-modal').classList.add('open');
+}
+function editSet(i) {
+  editingIndex = i;
+  const s = sets[i];
+  document.getElementById('modal-title').textContent = '단어 세트 수정';
+  document.getElementById('set-name-input').value = s.name;
+  document.getElementById('card-pairs-container').innerHTML = '';
+  s.cards.forEach(c => addCardPair(c.term, c.def));
+  document.getElementById('create-modal').classList.add('open');
+}
+function closeCreateModal() { document.getElementById('create-modal').classList.remove('open'); }
+function addCardPair(term='', def='') {
+  const c = document.createElement('div');
+  c.className = 'card-pair';
+  c.innerHTML = `<input class="form-input term-input" placeholder="용어" value="${esc(term)}" />
+    <input class="form-input def-input" placeholder="뜻" value="${esc(def)}" />
+    <button class="btn btn-sm btn-danger" onclick="this.parentElement.remove()"><i class="ti ti-trash"></i></button>`;
+  document.getElementById('card-pairs-container').appendChild(c);
+}
+function saveSet() {
+  const name = document.getElementById('set-name-input').value.trim();
+  if (!name) { alert('세트 이름을 입력해주세요.'); return; }
+  const cards = [];
+  document.querySelectorAll('#card-pairs-container .card-pair').forEach(p => {
+    const t = p.querySelector('.term-input').value.trim();
+    const d = p.querySelector('.def-input').value.trim();
+    if (t || d) cards.push({ term: t, def: d });
+  });
+  if (!cards.length) { alert('카드를 최소 1개 이상 추가해주세요.'); return; }
+  if (editingIndex >= 0) sets[editingIndex] = { name, cards };
+  else sets.push({ name, cards });
+  saveSets(); closeCreateModal(); renderSets();
+  if (editingIndex >= 0 && currentSetIndex === editingIndex) studySet(editingIndex);
+}
+function deleteSet(i) {
+  if (!confirm('이 세트를 삭제할까요?')) return;
+  sets.splice(i, 1); saveSets(); renderSets();
+  if (currentSetIndex === i) backToHome();
+}
+function studySet(i) {
+  currentSetIndex = i; cardIndex = 0; flipped = false;
+  document.getElementById('home-section').style.display = 'none';
+  document.getElementById('study-area').classList.add('open');
+  document.getElementById('study-title').textContent = sets[i].name;
+  document.getElementById('study-badge').textContent = sets[i].cards.length + '개';
+  setMode('flash');
+}
+function backToHome() {
+  document.getElementById('home-section').style.display = '';
+  document.getElementById('study-area').classList.remove('open');
+  currentSetIndex = -1;
+}
+function setMode(mode) {
+  currentMode = mode; cardIndex = 0; flipped = false;
+  ['flash','quiz','list'].forEach(m => document.getElementById('tab-'+m).classList.toggle('active', m===mode));
+  if (mode==='flash') renderFlash();
+  else if (mode==='quiz') startQuiz();
+  else renderList();
+}
+function renderFlash() {
+  const set = sets[currentSetIndex], card = set.cards[cardIndex];
+  document.getElementById('mode-content').innerHTML = `
+    <div class="flashcard-wrap">
+      <div class="flashcard" onclick="flipCard()">
+        <span class="flashcard-side-label">${flipped ? '뜻' : '용어'}</span>
+        <div class="flashcard-word">${esc(flipped ? card.def : card.term)}</div>
+        ${flipped ? `<div class="flashcard-sub">${esc(card.term)}</div>` : ''}
+        <div class="flashcard-hint">${flipped ? '' : '클릭하여 뒤집기'}</div>
+      </div>
+      <div class="card-nav">
+        <button class="btn" onclick="prevCard()" ${cardIndex===0?'disabled':''}><i class="ti ti-arrow-left"></i></button>
+        <span class="card-progress">${cardIndex+1} / ${set.cards.length}</span>
+        <button class="btn" onclick="nextCard()" ${cardIndex===set.cards.length-1?'disabled':''}><i class="ti ti-arrow-right"></i></button>
+      </div>
+      <button class="btn btn-sm" onclick="shuffleCards()"><i class="ti ti-refresh"></i> 섞기</button>
+    </div>`;
+}
+function flipCard() { flipped = !flipped; renderFlash(); }
+function prevCard() { if (cardIndex>0) { cardIndex--; flipped=false; renderFlash(); } }
+function nextCard() { const s=sets[currentSetIndex]; if(cardIndex<s.cards.length-1){cardIndex++;flipped=false;renderFlash();} }
+function shuffleCards() {
+  const s=sets[currentSetIndex];
+  for(let i=s.cards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[s.cards[i],s.cards[j]]=[s.cards[j],s.cards[i]];}
+  cardIndex=0;flipped=false;renderFlash();
+}
+function startQuiz() {
+  const set=sets[currentSetIndex];
+  if(set.cards.length<2){document.getElementById('mode-content').innerHTML='<div class="empty-state">퀴즈 모드는 카드가 2개 이상 필요합니다.</div>';return;}
+  quizState={q:0,score:0,order:[...set.cards].sort(()=>Math.random()-0.5)};
+  renderQuiz();
+}
+function renderQuiz() {
+  const set=sets[currentSetIndex],qs=quizState;
+  if(qs.q>=qs.order.length){
+    document.getElementById('mode-content').innerHTML=`<div class="quiz-score"><div class="quiz-score-num">${qs.score} / ${qs.order.length}</div><div class="quiz-score-label">정답률 ${Math.round(qs.score/qs.order.length*100)}%</div><button class="btn btn-primary" onclick="startQuiz()"><i class="ti ti-refresh"></i> 다시 풀기</button></div>`;
+    return;
+  }
+  const card=qs.order[qs.q];
+  const wrong=set.cards.map(c=>c.def).filter(d=>d!==card.def).sort(()=>Math.random()-0.5).slice(0,3);
+  const opts=[...wrong,card.def].sort(()=>Math.random()-0.5);
+  document.getElementById('mode-content').innerHTML=`<div class="quiz-area"><div class="quiz-question"><div class="quiz-q-label">다음 용어의 뜻은?</div><div class="quiz-q-word">${esc(card.term)}</div></div><div class="quiz-options" id="quiz-opts">${opts.map(o=>`<div class="quiz-option" onclick="answerQuiz(this,'${esc(o)}','${esc(card.def)}')">${esc(o)}</div>`).join('')}</div><div style="text-align:center;font-size:13px;color:var(--text-muted);">${qs.q+1} / ${qs.order.length}</div></div>`;
+}
+function answerQuiz(el,chosen,correct){
+  document.querySelectorAll('.quiz-option').forEach(o=>o.classList.add('locked'));
+  if(chosen===correct){el.classList.add('correct');quizState.score++;}
+  else{el.classList.add('wrong');document.querySelectorAll('.quiz-option').forEach(o=>{if(o.textContent===correct)o.classList.add('correct');});}
+  setTimeout(()=>{quizState.q++;renderQuiz();},900);
+}
+function renderList(){
+  const set=sets[currentSetIndex];
+  document.getElementById('mode-content').innerHTML=`<div class="list-view">${set.cards.map(c=>`<div class="list-item"><div class="list-term">${esc(c.term)}</div><div class="list-divider"></div><div class="list-def">${esc(c.def)}</div></div>`).join('')}</div>`;
+}
+loadSets();
+</script>
+</body>
+</html>
