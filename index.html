@@ -226,13 +226,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   justify-content: center;
   min-height: 70px;
 }
-.match-card.selected {/* 카드 선택 상태 */
+/* 카드 선택 상태 */
+.match-card.selected {
   border-color: var(--accent);
   background-color: var(--info-bg);
   color: var(--accent);
   transform: scale(1.02);
 }
-.match-card.matched { /* 짝 맞추기 성공 상태 */
+/* 짝 맞추기 성공 상태 */
+.match-card.matched {
   visibility: hidden; /* 정답을 맞추면 화면에서 사라지게 처리 */
   pointer-events: none;
 }
@@ -767,15 +769,28 @@ window.backToHome = function() {
 };
 
 window.setMode = function(mode) {
+  // [핵심 추가] 다른 모드로 바꿀 때 작동 중인 퀴즈 및 짝 맞추기 타이머를 즉시 완전히 멈춤!
+  if (quizState && quizState.timerId) {
+    clearInterval(quizState.timerId);
+    quizState.timerId = null;
+  }
+  if (matchState && matchState.timerId) {
+    clearInterval(matchState.timerId);
+    matchState.timerId = null;
+  }
+
   currentMode = mode; cardIndex = 0; flipped = false;
+  
+  // 탭 활성화 클래스 제어
   ['flash','quiz','match','list'].forEach(m => {
     const el = document.getElementById('tab-'+m);
     if(el) el.classList.toggle('active', m===mode);
   });
   
+  // 모드별 화면 렌더링
   if (mode==='flash') renderFlash();
   else if (mode==='quiz') startQuiz();
-  else if (mode==='match') startMatch(); // 짝 맞추기 시작
+  else if (mode==='match') startMatch();
   else renderList();
 };
 
@@ -927,44 +942,71 @@ window.updateTimeLimit = async function(value) {
   let newTime = parseInt(value, 10);
   if (isNaN(newTime) || newTime < 1) newTime = 1; 
   
+  // 퀴즈 모드 시간 실시간 보정
   if (quizState) {
+    // 늘어난 전체 시간에 맞춰 남은 시간도 자연스럽게 늘려줌 (기존 시간과의 차이만큼 더함)
+    const timeDiff = newTime - quizState.timeLimit;
+    quizState.timeLeft = Math.max(1, quizState.timeLeft + timeDiff);
     quizState.timeLimit = newTime;
+    
+    // 일시 정지 상태이므로 바뀐 비율에 맞게 상태 바의 겉모습만 즉시 업데이트
+    const timerBar = document.getElementById('timer-bar');
+    if (timerBar) {
+      timerBar.style.width = Math.max(0, (quizState.timeLeft / newTime) * 100) + '%';
+    }
   }
 
-  // [변경] 수동 로그인된 유저가 맞는지 확인
-  if (currentUser && currentUser.username) {
+  // 동기화 및 DB 저장 로직 (기존 유지)
+  if (currentUser && currentUser.username && currentUser.docId) {
     try {
-      // 유저의 문서를 정확히 찾아 업데이트하기 위해 수동 로그인 시 저장했던 docId를 활용합니다.
-      if (currentUser.docId) {
-        const userDocRef = doc(db, "users", currentUser.docId);
-        
-        // updateDoc을 사용하여 기존 회원 정보는 놔두고 quizTimeLimit만 새로 저장/수정합니다.
-        await updateDoc(userDocRef, {
-          quizTimeLimit: newTime
-        });
-        console.log("수동 로그인 유저의 DB에 제한 시간 동기화 완료!");
-      }
-    } catch (error) {
-      console.error("Firestore에 설정 저장 실패:", error);
-    }
+      const userDocRef = doc(db, "users", currentUser.docId);
+      await updateDoc(userDocRef, { quizTimeLimit: newTime });
+    } catch (error) { console.error(error); }
   } else {
-    // 비로그인 상태라면 임시로 로컬스토리지에 저장
     localStorage.setItem('savedQuizTime', newTime);
   }
 };
 
-// 2. 톱니바퀴를 누르면 모달창을 켜고 끄는 함수
-window.toggleSettingsModal = function() {
-  const modal = document.getElementById('quiz-settings-modal');
-  if (modal) {
-    if (modal.style.display === 'none') {
-      modal.style.display = 'flex'; // 켜기
-    } else {
-      modal.style.display = 'none';  // 끄기
+// 짝 맞추기 모드 입력창 핸들러 수정
+window.updateMatchTimeLimit = function(value) {
+  window.updateTimeLimit(value); 
+  let newTime = parseInt(value, 10);
+  if (isNaN(newTime) || newTime < 1) newTime = 1;
+  
+  if (matchState) {
+    const timeDiff = newTime - matchState.timeLimit;
+    matchState.timeLeft = Math.max(1, matchState.timeLeft + timeDiff);
+    matchState.timeLimit = newTime;
+    
+    const timerBar = document.getElementById('match-timer-bar');
+    if (timerBar) {
+      timerBar.style.width = Math.max(0, (matchState.timeLeft / newTime) * 100) + '%';
     }
   }
 };
 
+
+window.toggleSettingsModal = function() {
+  const modal = document.getElementById('quiz-settings-modal');
+  if (!modal) return;
+
+  if (modal.style.display === 'none') {
+    // 1. 모달창을 열 때: 구동 중인 모든 타이머를 일시 정지(Clear)
+    if (quizState && quizState.timerId) clearInterval(quizState.timerId);
+    if (matchState && matchState.timerId) clearInterval(matchState.timerId);
+    
+    modal.style.display = 'flex'; 
+  } else {
+    // 2. 모달창을 닫을 때: 현재 켜져 있는 모드에 맞춰 타이머 재개(Resume)
+    modal.style.display = 'none';  
+    
+    if (currentMode === 'quiz' && quizState) {
+      runQuizTimer(); // 퀴즈 타이머 이어서 시작
+    } else if (currentMode === 'match' && matchState) {
+      runMatchTimer(); // 짝 맞추기 타이머 이어서 시작
+    }
+  }
+};
 
 function renderQuiz() {
   const set = sets[currentSetIndex], qs = quizState;
@@ -981,6 +1023,7 @@ function renderQuiz() {
   const opts = [...wrong, card.def].sort(() => Math.random() - 0.5);
   
   let timeLeft = qs.timeLimit;
+  runQuizTimer();
 
   document.getElementById('mode-content').innerHTML = `
     <div class="quiz-area" style="position: relative;">
@@ -1016,20 +1059,24 @@ function renderQuiz() {
       </div>
       <div style="text-align:center;font-size:13px;color:var(--text-muted);">${qs.q + 1} / ${qs.order.length}</div>
     </div>`;
+}
 
-  // 상태 표시줄 타이머 로직 (기존과 동일)
+function runQuizTimer() {
+  const qs = quizState;
+  if (!qs) return;
+
   qs.timerId = setInterval(() => {
-    timeLeft--;
+    qs.timeLeft--; // 전역 상태의 시간을 깎음
     const timerBar = document.getElementById('timer-bar');
     
     if (timerBar) {
-      const percentage = Math.max(0, (timeLeft / qs.timeLimit) * 100);
+      const percentage = Math.max(0, (qs.timeLeft / qs.timeLimit) * 100);
       timerBar.style.width = percentage + '%';
     }
 
-    if (timeLeft <= 0) {
+    if (qs.timeLeft <= 0) {
       clearInterval(qs.timerId);
-      handleTimeOut(card.def);
+      handleTimeOut(qs.order[qs.q].def); // 정답 전달
     }
   }, 1000);
 }
@@ -1085,7 +1132,7 @@ window.answerQuiz = function(el, chosen, correct) {
 // ── 짝 맞추기 게임 상태 ──
 let matchState = null;
 
-// 1. 게임 시작 및 시간 설정 불러오기
+// 1. 게임 시작 (전체 단어를 준비하고 셔플)
 async function startMatch() {
   const set = sets[currentSetIndex];
   if (set.cards.length < 2) {
@@ -1093,7 +1140,7 @@ async function startMatch() {
     return;
   }
 
-  // 퀴즈와 동일하게 저장된 설정 시간 연동
+  // 제한 시간 설정 불러오기 (Firestore 또는 로컬스토리지)
   let initialTime = 10; 
   if (currentUser && currentUser.username) {
     try {
@@ -1108,31 +1155,48 @@ async function startMatch() {
     if (savedTime) initialTime = parseInt(savedTime, 10);
   }
 
-  // 화면에 뿌릴 최대 5개 단어 추출 후 데이터 가공 (용어 카드 5개, 뜻 카드 5개 분리)
-  const gameCards = [...set.cards].sort(() => Math.random() - 0.5).slice(0, 5);
-  let pool = [];
-  
-  gameCards.forEach(c => {
-    pool.push({ id: c.term, text: c.term, type: 'term', pairId: c.def });
-    pool.push({ id: c.def, text: c.def, type: 'def', pairId: c.term });
-  });
-  
-  // 10개의 카드를 완전히 무작위로 혼합
-  pool.sort(() => Math.random() - 0.5);
+  // 규칙 1: 세트의 모든 단어가 중복 없이 등장하도록 전체 카드를 섞음
+  const allShuffledCards = [...set.cards].sort(() => Math.random() - 0.5);
 
   matchState = {
-    pool: pool,
-    selectedCard: null, // 현재 선택한 카드 객체 저장
-    matchedCount: 0,    // 맞춘 단어 쌍의 개수 (5개가 되면 승리)
+    allCards: allShuffledCards, // 전체 단어 목록
+    currentIndex: 0,            // 현재 몇 번째 단어까지 진행했는지 고유 인덱스
+    currentTerms: [],           // 이번 라운드 왼쪽 용어들
+    currentDefs: [],            // 이번 라운드 오른쪽 뜻들
+    selectedCard: null,
+    matchedCount: 0,
+    successPairs: 0,            // 전체 게임 중 맞춘 총 개수 누적
     timerId: null,
-    timeLimit: initialTime,
-    totalPairs: gameCards.length
+    timeLimit: initialTime
   };
+
+  nextMatchRound(); // 첫 번째 라운드 시작
+}
+
+// 2. 다음 라운드(5개 세트) 준비 함수
+function nextMatchRound() {
+  const ms = matchState;
+  
+  // 모든 단어를 다 소진했다면 게임 완전 종료 화면으로
+  if (ms.currentIndex >= ms.allCards.length) {
+    endMatchGameTotal();
+    return;
+  }
+
+  // 규칙 1: 남은 단어 중 최대 5개를 잘라옴
+  const roundCards = ms.allCards.slice(ms.currentIndex, ms.currentIndex + 5);
+  ms.currentIndex += roundCards.length; // 인덱스 이동
+  ms.matchedCount = 0;
+  ms.selectedCard = null;
+
+  // 규칙 2: 왼쪽(용어)과 오른쪽(뜻)을 각각 분리하여 따로따로 섞음
+  ms.currentTerms = roundCards.map(c => ({ id: c.term, text: c.term, type: 'term', pairId: c.def })).sort(() => Math.random() - 0.5);
+  ms.currentDefs = roundCards.map(c => ({ id: c.def, text: c.def, type: 'def', pairId: c.term })).sort(() => Math.random() - 0.5);
 
   renderMatch();
 }
 
-// 2. 화면 렌더링 및 타이머 시작
+// 3. 화면 렌더링 및 타이머 가동
 function renderMatch() {
   const ms = matchState;
   if (ms.timerId) clearInterval(ms.timerId);
@@ -1159,111 +1223,128 @@ function renderMatch() {
         </div>
       </div>
 
+      <div style="text-align: center; font-size: 13px; color: var(--text-muted); margin-bottom: 5px;">
+        진행도: ${Math.min(ms.currentIndex, ms.allCards.length)} / ${ms.allCards.length}
+      </div>
+
       <div class="timer-bar-container">
         <div id="match-timer-bar" class="timer-bar" style="width: 100%;"></div>
       </div>
       
-      <div class="match-grid">
-        ${ms.pool.map((c, idx) => `
-          <div id="m-card-${idx}" class="match-card" onclick="selectMatchCard(${idx})">
-            ${esc(c.text)}
-          </div>
-        `).join('')}
+      <div class="match-columns">
+        <div class="match-col">
+          ${ms.currentTerms.map((c, i) => `
+            <div id="m-card-term-${i}" class="match-card" onclick="selectMatchCard('term', ${i})">${esc(c.text)}</div>
+          `).join('')}
+        </div>
+        <div class="match-col">
+          ${ms.currentDefs.map((c, i) => `
+            <div id="m-card-def-${i}" class="match-card" onclick="selectMatchCard('def', ${i})">${esc(c.text)}</div>
+          `).join('')}
+        </div>
       </div>
     </div>`;
 
   let timeLeft = ms.timeLimit;
+  runMatchTimer();
+}
+
+function runMatchTimer() {
+  const ms = matchState;
+  if (!ms) return;
+
   ms.timerId = setInterval(() => {
-    timeLeft--;
+    ms.timeLeft--; // 전역 상태의 시간을 깎음
     const timerBar = document.getElementById('match-timer-bar');
     if (timerBar) {
-      const percentage = Math.max(0, (timeLeft / ms.timeLimit) * 100);
+      const percentage = Math.max(0, (ms.timeLeft / ms.timeLimit) * 100);
       timerBar.style.width = percentage + '%';
     }
 
-    if (timeLeft <= 0) {
+    if (ms.timeLeft <= 0) {
       clearInterval(ms.timerId);
-      endMatchGame(false); // 시간 초과 종료
+      alert("시간 초과! 다음 단어로 넘어갑니다.");
+      nextMatchRound(); 
     }
   }, 1000);
 }
 
-// 3. 카드 클릭 이벤트 처리
-window.selectMatchCard = function(idx) {
+// 4. 카드 선택 로직
+window.selectMatchCard = function(type, idx) {
   const ms = matchState;
-  const targetCard = ms.pool[idx];
-  const targetEl = document.getElementById(`m-card-${idx}`);
+  const pool = type === 'term' ? ms.currentTerms : ms.currentDefs;
+  const targetCard = pool[idx];
+  const targetEl = document.getElementById(`m-card-${type}-${idx}`);
 
-  // 이미 맞춰서 없어진 카드거나 자기 자신을 다시 누른 경우 무시
   if (targetEl.classList.contains('matched') || targetEl.classList.contains('selected')) return;
 
-  // 첫 번째 카드 선택 시
   if (!ms.selectedCard) {
-    ms.selectedCard = { card: targetCard, idx: idx };
+    ms.selectedCard = { card: targetCard, type: type, idx: idx };
     targetEl.classList.add('selected');
-  } 
-  // 두 번째 카드 선택 시 (검증)
-  else {
+  } else {
     const first = ms.selectedCard;
-    const firstEl = document.getElementById(`m-card-${first.idx}`);
+    const firstEl = document.getElementById(`m-card-${first.type}-${first.idx}`);
     
-    // 정답 체크: 첫 번째 카드의 pairId가 두 번째 카드의 id와 일치하는가?
+    // 같은 열의 카드를 또 누른 경우 선택 교체 처리
+    if (first.type === type) {
+      firstEl.classList.remove('selected');
+      ms.selectedCard = { card: targetCard, type: type, idx: idx };
+      targetEl.classList.add('selected');
+      return;
+    }
+
+    // 정답 판별
     if (first.card.pairId === targetCard.id) {
-      // 짝 맞추기 성공
       firstEl.classList.remove('selected');
       firstEl.classList.add('matched');
       targetEl.classList.add('matched');
+      
       ms.matchedCount++;
+      ms.successPairs++; // 누적 정답 수 증가
 
-      // 모든 카드 쌍(5개)을 다 맞췄다면 게임 클리어
-      if (ms.matchedCount === ms.totalPairs) {
+      // 현재 라운드(최대 5개)의 카드를 다 맞춘 경우
+      if (ms.matchedCount === ms.currentTerms.length) {
         clearInterval(ms.timerId);
-        endMatchGame(true);
+        setTimeout(() => {
+          nextMatchRound(); // 다음 라운드로 이동
+        }, 300);
       }
     } else {
-      // 짝 맞추기 실패: 잠깐 보여줬다가 해제하기 위해 일시적으로 클릭 잠금
+      // 오답 처리 시 잠깐 반짝였다가 해제
       document.querySelectorAll('.match-card').forEach(el => el.style.pointerEvents = 'none');
       targetEl.classList.add('selected');
       
       setTimeout(() => {
         firstEl.classList.remove('selected');
         targetEl.classList.remove('selected');
-        // 클릭 잠금 해제
         document.querySelectorAll('.match-card').forEach(el => el.style.pointerEvents = '');
       }, 400);
     }
-    ms.selectedCard = null; // 선택 초기화
+    ms.selectedCard = null;
   }
 };
 
-// 4. 게임 결과 렌더링 (성공 또는 시간 초과 타임아웃)
-function endMatchGame(isWin) {
-  if (matchState.timerId) clearInterval(matchState.timerId);
-  
-  if (isWin) {
-    document.getElementById('mode-content').innerHTML = `
-      <div class="quiz-score">
-        <div class="quiz-score-num" style="color: #27500A;">SUCCESS!</div>
-        <div class="quiz-score-label">제한 시간 내에 모든 짝을 맞췄습니다!</div>
-        <button class="btn btn-primary" onclick="startMatch()" style="width:auto;padding:8px 20px;"><i class="ti ti-refresh"></i> 다시 하기</button>
-      </div>`;
-  } else {
-    document.getElementById('mode-content').innerHTML = `
-      <div class="quiz-score">
-        <div class="quiz-score-num" style="color: var(--danger-border);">TIME OUT</div>
-        <div class="quiz-score-label">시간 초과! 아쉽게도 짝을 맞추지 못했습니다.</div>
-        <button class="btn btn-primary" onclick="startMatch()" style="width:auto;padding:8px 20px;"><i class="ti ti-refresh"></i> 다시 시도</button>
-      </div>`;
-  }
+// 5. 전체 게임 종료 결과 창 생성
+function endMatchGameTotal() {
+  const ms = matchState;
+  const total = ms.allCards.length;
+  const percent = Math.round((ms.successPairs / total) * 100);
+
+  document.getElementById('mode-content').innerHTML = `
+    <div class="quiz-score">
+      <div class="quiz-score-num">${ms.successPairs} / ${total}</div>
+      <div class="quiz-score-label">전체 단어 매칭 완료! (성공률 ${percent}%)</div>
+      <button class="btn btn-primary" onclick="startMatch()" style="width:auto;padding:8px 20px;"><i class="ti ti-refresh"></i> 다시 도전하기</button>
+    </div>`;
 }
 
-// 5. 모달을 통한 실시간 시간 변경 핸들러 추가
+// 모달 시간 동기화용 함수
 window.updateMatchTimeLimit = function(value) {
-  window.updateTimeLimit(value); // 기존 Firestore/로컬스토리지 저장용 함수 호출
+  window.updateTimeLimit(value); 
   let newTime = parseInt(value, 10);
   if (isNaN(newTime) || newTime < 1) newTime = 1;
   if (matchState) {
-    matchState.timeLimit = newTime; // 현재 흐르는 게임 시간 분모도 동기화
+    matchState.timeLimit = newTime; 
   }
 };
 
