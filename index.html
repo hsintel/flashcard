@@ -27,39 +27,86 @@
   }
 }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
-.nav { background: var(--surface); border-bottom: 0.5px solid var(--border); padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 10; }
-.nav-logo { font-size: 18px; font-weight: 500; display: flex; align-items: center; gap: 8px; color: var(--text); }
-.nav-logo i { color: var(--accent); }
-.btn { padding: 6px 14px; border-radius: var(--radius-md); border: 0.5px solid var(--border-hover); background: transparent; cursor: pointer; font-size: 14px; color: var(--text); transition: background 0.15s; font-family: inherit; }
+
+/* ── Auth ── */
+.auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.auth-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 2rem; width: 360px; max-width: 100%; }
+.auth-logo { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 500; color: var(--text); margin-bottom: 1.75rem; }
+.auth-logo i { color: var(--accent); font-size: 24px; }
+.auth-tabs { display: flex; border-bottom: 0.5px solid var(--border); margin-bottom: 1.5rem; }
+.auth-tab { flex: 1; padding: 8px; text-align: center; font-size: 14px; cursor: pointer; color: var(--text-muted); border: none; background: transparent; font-family: inherit; border-bottom: 2px solid transparent; margin-bottom: -0.5px; transition: color 0.15s; }
+.auth-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+.auth-title { font-size: 16px; font-weight: 500; margin-bottom: 1.25rem; color: var(--text); }
+.form-group { margin-bottom: 1rem; }
+.form-label { font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 4px; }
+.form-input { width: 100%; padding: 9px 12px; border-radius: var(--radius-md); border: 0.5px solid var(--border-hover); background: var(--surface); color: var(--text); font-size: 14px; font-family: inherit; transition: border-color 0.15s; }
+.form-input:focus { outline: none; border-color: var(--accent); }
+.btn { padding: 8px 16px; border-radius: var(--radius-md); border: 0.5px solid var(--border-hover); background: transparent; cursor: pointer; font-size: 14px; color: var(--text); transition: background 0.15s; font-family: inherit; }
 .btn:hover { background: var(--border); }
-.btn:disabled { opacity: 0.4; cursor: default; }
-.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); width: 100%; padding: 10px; font-size: 15px; margin-top: 0.5rem; }
 .btn-primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
 .btn-sm { padding: 4px 10px; font-size: 13px; }
 .btn-danger { border-color: var(--danger-border); color: var(--danger-text); }
 .btn-danger:hover { background: var(--danger-bg); }
+.auth-msg { font-size: 13px; margin-top: 10px; padding: 8px 12px; border-radius: var(--radius-md); display: none; }
+.auth-msg.error { background: var(--danger-bg); color: var(--danger-text); display: block; }
+.auth-msg.success { background: var(--success-bg); color: var(--success-text); display: block; }
+
+/* ── App ── */
+.app { display: none; }
+.app.visible { display: block; }
+.nav { background: var(--surface); border-bottom: 0.5px solid var(--border); padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 10; }
+.nav-logo { font-size: 18px; font-weight: 500; display: flex; align-items: center; gap: 8px; color: var(--text); }
+.nav-logo i { color: var(--accent); }
+.nav-right { display: flex; align-items: center; gap: 10px; }
+.nav-user { font-size: 13px; color: var(--text-muted); }
 .main { padding: 2rem 1.5rem; max-width: 900px; margin: 0 auto; }
 .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
 .section-title { font-size: 18px; font-weight: 500; }
 .badge { display: inline-block; padding: 2px 10px; border-radius: var(--radius-md); font-size: 12px; background: var(--info-bg); color: var(--info-text); }
 .sets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-.set-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; cursor: default; transition: border-color 0.15s; }
+.set-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; transition: border-color 0.15s; }
 .set-card:hover { border-color: var(--border-hover); }
 .set-card-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
 .set-card-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
 .set-card-actions { display: flex; gap: 6px; }
 .empty-state { text-align: center; padding: 4rem 1rem; color: var(--text-muted); grid-column: 1/-1; }
 .empty-icon { font-size: 48px; color: var(--text-hint); margin-bottom: 12px; }
+
+/* ── Modal ── */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: center; justify-content: center; }
 .modal-overlay.open { display: flex; }
 .modal { background: var(--surface); border-radius: var(--radius-lg); padding: 1.5rem; width: 500px; max-width: 95vw; max-height: 85vh; overflow-y: auto; }
 .modal-title { font-size: 18px; font-weight: 500; margin-bottom: 1.25rem; }
-.form-group { margin-bottom: 1rem; }
-.form-label { font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 4px; }
-.form-input { width: 100%; padding: 8px 12px; border-radius: var(--radius-md); border: 0.5px solid var(--border-hover); background: var(--surface); color: var(--text); font-size: 14px; font-family: inherit; }
-.form-input:focus { outline: none; border-color: var(--accent); }
 .card-pair { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-bottom: 8px; align-items: center; }
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; }
+.modal-tabs { display: flex; gap: 0; margin-bottom: 1.25rem; border-bottom: 0.5px solid var(--border); }
+.modal-tab { padding: 8px 16px; font-size: 14px; cursor: pointer; color: var(--text-muted); border: none; background: transparent; font-family: inherit; border-bottom: 2px solid transparent; margin-bottom: -0.5px; transition: color 0.15s; }
+.modal-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+
+/* ── Import ── */
+.import-sep-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+.sep-box { background: var(--bg); border: 0.5px solid var(--border-hover); border-radius: var(--radius-md); padding: 10px 12px; }
+.sep-box-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+.sep-options { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.sep-chip { padding: 3px 10px; border-radius: 99px; border: 0.5px solid var(--border-hover); font-size: 12px; cursor: pointer; background: transparent; color: var(--text); font-family: inherit; transition: background 0.12s; }
+.sep-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.sep-custom { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.sep-custom-label { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+.sep-custom-input { width: 64px; padding: 4px 8px; border-radius: var(--radius-md); border: 0.5px solid var(--border-hover); background: var(--surface); color: var(--text); font-size: 13px; font-family: monospace; }
+.sep-custom-input:focus { outline: none; border-color: var(--accent); }
+.import-textarea { width: 100%; min-height: 160px; padding: 10px 12px; border-radius: var(--radius-md); border: 0.5px solid var(--border-hover); background: var(--surface); color: var(--text); font-size: 13px; font-family: monospace; resize: vertical; line-height: 1.6; }
+.import-textarea:focus { outline: none; border-color: var(--accent); }
+.import-preview { margin-top: 10px; background: var(--bg); border-radius: var(--radius-md); border: 0.5px solid var(--border); padding: 10px 12px; max-height: 140px; overflow-y: auto; }
+.import-preview-title { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+.import-preview-item { display: flex; gap: 10px; font-size: 13px; padding: 4px 0; border-bottom: 0.5px solid var(--border); }
+.import-preview-item:last-child { border-bottom: none; }
+.import-preview-term { font-weight: 500; flex: 1; }
+.import-preview-def { color: var(--text-muted); flex: 1; }
+.import-error { font-size: 13px; color: var(--danger-text); margin-top: 8px; }
+
+/* ── Study ── */
 .study-area { display: none; }
 .study-area.open { display: block; }
 .study-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem; flex-wrap: wrap; }
@@ -93,44 +140,98 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .list-term { font-weight: 500; font-size: 15px; flex: 1; }
 .list-def { font-size: 14px; color: var(--text-muted); flex: 1; }
 .list-divider { width: 1px; height: 24px; background: var(--border); flex-shrink: 0; }
+.loading-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 15px; gap: 10px; }
 </style>
 </head>
 <body>
 
-<nav class="nav">
-  <div class="nav-logo"><i class="ti ti-cards"></i> 단어카드</div>
-  <button class="btn btn-primary" onclick="openCreateModal()"><i class="ti ti-plus"></i> 새 세트</button>
-</nav>
+<!-- 로딩 -->
+<div id="loading-wrap" class="loading-wrap">
+  <i class="ti ti-loader" style="font-size:22px;animation:spin 1s linear infinite;"></i> 불러오는 중...
+</div>
+<style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>
 
-<div class="main">
-  <div id="home-section">
-    <div class="section-header">
-      <div class="section-title">내 단어 세트</div>
-      <span id="set-count-badge" class="badge">0개</span>
+<!-- 로그인/회원가입 -->
+<div id="auth-wrap" class="auth-wrap" style="display:none;">
+  <div class="auth-card">
+    <div class="auth-logo"><i class="ti ti-cards"></i> 단어카드</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')" id="atab-login">로그인</button>
+      <button class="auth-tab" onclick="switchAuthTab('signup')" id="atab-signup">회원가입</button>
     </div>
-    <div class="sets-grid" id="sets-grid">
-      <div class="empty-state">
-        <div class="empty-icon"><i class="ti ti-cards"></i></div>
-        <div>아직 단어 세트가 없습니다.<br>새 세트를 만들어 시작하세요!</div>
+    <div id="auth-login">
+      <div class="form-group">
+        <label class="form-label">아이디</label>
+        <input class="form-input" id="login-id" placeholder="아이디 입력" autocomplete="username" />
       </div>
+      <div class="form-group">
+        <label class="form-label">비밀번호</label>
+        <input class="form-input" id="login-pw" type="password" placeholder="비밀번호 입력" autocomplete="current-password" />
+      </div>
+      <div id="login-msg" class="auth-msg"></div>
+      <button class="btn btn-primary" onclick="doLogin()"><i class="ti ti-login"></i> 로그인</button>
     </div>
-  </div>
-
-  <div class="study-area" id="study-area">
-    <div class="study-header">
-      <button class="btn btn-sm" onclick="backToHome()"><i class="ti ti-arrow-left"></i> 목록</button>
-      <div class="study-title" id="study-title"></div>
-      <span class="badge" id="study-badge"></span>
+    <div id="auth-signup" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">아이디 <span style="font-size:12px;color:var(--text-hint);">(영문, 숫자, 4자 이상)</span></label>
+        <input class="form-input" id="signup-id" placeholder="사용할 아이디 입력" autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">비밀번호 <span style="font-size:12px;color:var(--text-hint);">(6자 이상)</span></label>
+        <input class="form-input" id="signup-pw" type="password" placeholder="비밀번호 입력" autocomplete="new-password" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">비밀번호 확인</label>
+        <input class="form-input" id="signup-pw2" type="password" placeholder="비밀번호 재입력" autocomplete="new-password" />
+      </div>
+      <div id="signup-msg" class="auth-msg"></div>
+      <button class="btn btn-primary" onclick="doSignup()"><i class="ti ti-user-plus"></i> 회원가입</button>
     </div>
-    <div class="mode-tabs">
-      <button class="mode-tab active" onclick="setMode('flash')" id="tab-flash"><i class="ti ti-cards"></i> 플래시카드</button>
-      <button class="mode-tab" onclick="setMode('quiz')" id="tab-quiz"><i class="ti ti-list-check"></i> 퀴즈</button>
-      <button class="mode-tab" onclick="setMode('list')" id="tab-list"><i class="ti ti-layout-list"></i> 목록</button>
-    </div>
-    <div id="mode-content"></div>
   </div>
 </div>
 
+<!-- 메인 앱 -->
+<div id="app" class="app">
+  <nav class="nav">
+    <div class="nav-logo"><i class="ti ti-cards"></i> 단어카드</div>
+    <div class="nav-right">
+      <span class="nav-user" id="nav-user"></span>
+      <button class="btn btn-sm" onclick="doLogout()"><i class="ti ti-logout"></i> 로그아웃</button>
+      <button class="btn btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent);" onclick="openCreateModal()"><i class="ti ti-plus"></i> 새 세트</button>
+    </div>
+  </nav>
+
+  <div class="main">
+    <div id="home-section">
+      <div class="section-header">
+        <div class="section-title">내 단어 세트</div>
+        <span id="set-count-badge" class="badge">0개</span>
+      </div>
+      <div class="sets-grid" id="sets-grid">
+        <div class="empty-state">
+          <div class="empty-icon"><i class="ti ti-cards"></i></div>
+          <div>아직 단어 세트가 없습니다.<br>새 세트를 만들어 시작하세요!</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="study-area" id="study-area">
+      <div class="study-header">
+        <button class="btn btn-sm" onclick="backToHome()"><i class="ti ti-arrow-left"></i> 목록</button>
+        <div class="study-title" id="study-title"></div>
+        <span class="badge" id="study-badge"></span>
+      </div>
+      <div class="mode-tabs">
+        <button class="mode-tab active" onclick="setMode('flash')" id="tab-flash"><i class="ti ti-cards"></i> 플래시카드</button>
+        <button class="mode-tab" onclick="setMode('quiz')" id="tab-quiz"><i class="ti ti-list-check"></i> 퀴즈</button>
+        <button class="mode-tab" onclick="setMode('list')" id="tab-list"><i class="ti ti-layout-list"></i> 목록</button>
+      </div>
+      <div id="mode-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 세트 생성/수정 모달 -->
 <div class="modal-overlay" id="create-modal">
   <div class="modal">
     <div class="modal-title" id="modal-title">새 단어 세트 만들기</div>
@@ -138,29 +239,254 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <label class="form-label">세트 이름</label>
       <input class="form-input" id="set-name-input" placeholder="예: 영어 단어 Day 1" />
     </div>
-    <div class="form-group">
-      <label class="form-label">단어 카드 (용어 / 뜻)</label>
-      <div id="card-pairs-container"></div>
-      <button class="btn btn-sm" onclick="addCardPair()" style="margin-top:8px;"><i class="ti ti-plus"></i> 카드 추가</button>
+    <div class="modal-tabs">
+      <button class="modal-tab active" onclick="switchModalTab('manual')" id="mtab-manual"><i class="ti ti-edit"></i> 직접 입력</button>
+      <button class="modal-tab" onclick="switchModalTab('import')" id="mtab-import"><i class="ti ti-upload"></i> 일괄 불러오기</button>
+    </div>
+    <div id="tab-manual">
+      <div class="form-group">
+        <label class="form-label">단어 카드 (용어 / 뜻)</label>
+        <div id="card-pairs-container"></div>
+        <button class="btn btn-sm" onclick="addCardPair()" style="margin-top:8px;"><i class="ti ti-plus"></i> 카드 추가</button>
+      </div>
+    </div>
+    <div id="tab-import" style="display:none;">
+      <div class="import-sep-row">
+        <div class="sep-box">
+          <div class="sep-box-label">용어와 뜻 사이 구분자</div>
+          <div class="sep-options" id="term-sep-options">
+            <button class="sep-chip active" onclick="setSep('term','\t',this)">탭</button>
+            <button class="sep-chip" onclick="setSep('term','-',this)">-</button>
+            <button class="sep-chip" onclick="setSep('term',':',this)">:</button>
+            <button class="sep-chip" onclick="setSep('term','=',this)">=</button>
+            <button class="sep-chip" onclick="setSep('term','/',this)">/</button>
+          </div>
+          <div class="sep-custom">
+            <span class="sep-custom-label">직접 입력</span>
+            <input class="sep-custom-input" id="term-sep-custom" placeholder="\t" oninput="setSepCustom('term',this.value)" />
+          </div>
+        </div>
+        <div class="sep-box">
+          <div class="sep-box-label">단어와 다음 단어 사이 구분자</div>
+          <div class="sep-options" id="card-sep-options">
+            <button class="sep-chip active" onclick="setSep('card','\n',this)">줄바꿈</button>
+            <button class="sep-chip" onclick="setSep('card',',',this)">,</button>
+            <button class="sep-chip" onclick="setSep('card',';',this)">;</button>
+            <button class="sep-chip" onclick="setSep('card','|',this)">|</button>
+          </div>
+          <div class="sep-custom">
+            <span class="sep-custom-label">직접 입력</span>
+            <input class="sep-custom-input" id="card-sep-custom" placeholder="\n" oninput="setSepCustom('card',this.value)" />
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">단어 데이터 붙여넣기</label>
+        <textarea class="import-textarea" id="import-textarea" placeholder="예시 (탭 + 줄바꿈 기준):&#10;apple&#9;사과&#10;banana&#9;바나나&#10;cat&#9;고양이" oninput="updateImportPreview()"></textarea>
+        <div id="import-error" class="import-error" style="display:none;"></div>
+      </div>
+      <div class="import-preview" id="import-preview" style="display:none;">
+        <div class="import-preview-title" id="import-preview-title"></div>
+        <div id="import-preview-list"></div>
+      </div>
     </div>
     <div class="modal-actions">
       <button class="btn" onclick="closeCreateModal()">취소</button>
-      <button class="btn btn-primary" onclick="saveSet()">저장</button>
+      <button class="btn btn-primary" onclick="saveSet()" style="width:auto;">저장</button>
     </div>
   </div>
 </div>
 
-<script>
-let sets = [], currentSetIndex = -1, currentMode = 'flash';
-let cardIndex = 0, flipped = false, quizState = null, editingIndex = -1;
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-function loadSets() {
-  try { const d = localStorage.getItem('flashcard_sets'); if (d) sets = JSON.parse(d); } catch(e) {}
-  renderSets();
-}
-function saveSets() { localStorage.setItem('flashcard_sets', JSON.stringify(sets)); }
+const firebaseConfig = {
+  apiKey: "AIzaSyD42w33-aaNio3hqjBPSMyVUel5uEVEq9w",
+  authDomain: "flashcard-with-game.firebaseapp.com",
+  projectId: "flashcard-with-game",
+  storageBucket: "flashcard-with-game.firebasestorage.app",
+  messagingSenderId: "519033849608",
+  appId: "1:519033849608:web:b2fbd8881b0bf5a0f64ebd",
+  measurementId: "G-DEMSG44Q43"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ── 상태 ──
+let currentUser = null;
+let sets = [];
+let currentSetIndex = -1, currentMode = 'flash';
+let cardIndex = 0, flipped = false, quizState = null, editingIndex = -1;
+let termSep = '\t', cardSep = '\n', activeModalTab = 'manual';
+
+// ── 유틸 ──
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function showLoading(on) {
+  document.getElementById('loading-wrap').style.display = on ? 'flex' : 'none';
+}
+function showAuth() {
+  document.getElementById('auth-wrap').style.display = 'flex';
+  document.getElementById('app').classList.remove('visible');
+}
+function showApp(username) {
+  document.getElementById('auth-wrap').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  document.getElementById('nav-user').textContent = username + '님';
+}
+
+// ── 세션 ──
+function saveSession(user) {
+  sessionStorage.setItem('fc_user', JSON.stringify(user));
+}
+function loadSession() {
+  try { return JSON.parse(sessionStorage.getItem('fc_user')); } catch(e) { return null; }
+}
+function clearSession() { sessionStorage.removeItem('fc_user'); }
+
+// ── 초기화 ──
+showLoading(true);
+const saved = loadSession();
+if (saved) {
+  currentUser = saved;
+  showLoading(false);
+  showApp(currentUser.username);
+  loadSets();
+} else {
+  showLoading(false);
+  showAuth();
+}
+
+// ── Auth 탭 ──
+window.switchAuthTab = function(tab) {
+  document.getElementById('auth-login').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('auth-signup').style.display = tab === 'signup' ? '' : 'none';
+  document.getElementById('atab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('atab-signup').classList.toggle('active', tab === 'signup');
+};
+
+// ── 회원가입 ──
+window.doSignup = async function() {
+  const id = document.getElementById('signup-id').value.trim();
+  const pw = document.getElementById('signup-pw').value;
+  const pw2 = document.getElementById('signup-pw2').value;
+  const msg = document.getElementById('signup-msg');
+  msg.className = 'auth-msg';
+
+  if (!/^[a-zA-Z0-9]{4,}$/.test(id)) {
+    msg.textContent = '아이디는 영문/숫자 4자 이상이어야 합니다.';
+    msg.classList.add('error'); return;
+  }
+  if (pw.length < 6) {
+    msg.textContent = '비밀번호는 6자 이상이어야 합니다.';
+    msg.classList.add('error'); return;
+  }
+  if (pw !== pw2) {
+    msg.textContent = '비밀번호가 일치하지 않습니다.';
+    msg.classList.add('error'); return;
+  }
+
+  showLoading(true);
+  try {
+    const q = query(collection(db, 'users'), where('username', '==', id));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      msg.textContent = '이미 사용 중인 아이디입니다.';
+      msg.classList.add('error');
+      showLoading(false); return;
+    }
+    const hashed = await sha256(pw);
+    await addDoc(collection(db, 'users'), { username: id, password: hashed });
+    msg.textContent = '회원가입 완료! 로그인해 주세요.';
+    msg.classList.add('success');
+    document.getElementById('signup-id').value = '';
+    document.getElementById('signup-pw').value = '';
+    document.getElementById('signup-pw2').value = '';
+    setTimeout(() => switchAuthTab('login'), 1200);
+  } catch(e) {
+    msg.textContent = '오류가 발생했습니다. 다시 시도해 주세요.';
+    msg.classList.add('error');
+  }
+  showLoading(false);
+};
+
+// ── 로그인 ──
+window.doLogin = async function() {
+  const id = document.getElementById('login-id').value.trim();
+  const pw = document.getElementById('login-pw').value;
+  const msg = document.getElementById('login-msg');
+  msg.className = 'auth-msg';
+
+  if (!id || !pw) {
+    msg.textContent = '아이디와 비밀번호를 입력해 주세요.';
+    msg.classList.add('error'); return;
+  }
+
+  showLoading(true);
+  try {
+    const hashed = await sha256(pw);
+    const q = query(collection(db, 'users'), where('username', '==', id), where('password', '==', hashed));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      msg.textContent = '아이디 또는 비밀번호가 올바르지 않습니다.';
+      msg.classList.add('error');
+      showLoading(false); return;
+    }
+    currentUser = { username: id, docId: snap.docs[0].id };
+    saveSession(currentUser);
+    showApp(id);
+    loadSets();
+  } catch(e) {
+    msg.textContent = '오류가 발생했습니다. 다시 시도해 주세요.';
+    msg.classList.add('error');
+  }
+  showLoading(false);
+};
+
+// ── 로그아웃 ──
+window.doLogout = function() {
+  clearSession();
+  currentUser = null;
+  sets = [];
+  currentSetIndex = -1;
+  backToHome();
+  showAuth();
+};
+
+// ── Firestore 세트 CRUD ──
+async function loadSets() {
+  showLoading(true);
+  try {
+    const q = query(collection(db, 'sets'), where('uid', '==', currentUser.username));
+    const snap = await getDocs(q);
+    sets = snap.docs.map(d => ({ ...d.data(), _id: d.id }));
+  } catch(e) { sets = []; }
+  renderSets();
+  showLoading(false);
+}
+
+async function saveSetToDB(setData, docId) {
+  if (docId) {
+    await updateDoc(doc(db, 'sets', docId), setData);
+  } else {
+    const ref = await addDoc(collection(db, 'sets'), setData);
+    return ref.id;
+  }
+}
+
+async function deleteSetFromDB(docId) {
+  await deleteDoc(doc(db, 'sets', docId));
+}
+
+// ── 세트 렌더 ──
 function renderSets() {
   const grid = document.getElementById('sets-grid');
   document.getElementById('set-count-badge').textContent = sets.length + '개';
@@ -180,81 +506,186 @@ function renderSets() {
     </div>`).join('');
 }
 
-function openCreateModal() {
+// ── 모달 ──
+window.openCreateModal = function() {
   editingIndex = -1;
   document.getElementById('modal-title').textContent = '새 단어 세트 만들기';
   document.getElementById('set-name-input').value = '';
   document.getElementById('card-pairs-container').innerHTML = '';
+  document.getElementById('import-textarea').value = '';
+  document.getElementById('import-preview').style.display = 'none';
+  document.getElementById('import-error').style.display = 'none';
   addCardPair(); addCardPair(); addCardPair();
+  switchModalTab('manual');
   document.getElementById('create-modal').classList.add('open');
-}
-function editSet(i) {
+};
+
+window.editSet = function(i) {
   editingIndex = i;
   const s = sets[i];
   document.getElementById('modal-title').textContent = '단어 세트 수정';
   document.getElementById('set-name-input').value = s.name;
   document.getElementById('card-pairs-container').innerHTML = '';
+  document.getElementById('import-textarea').value = '';
+  document.getElementById('import-preview').style.display = 'none';
+  document.getElementById('import-error').style.display = 'none';
   s.cards.forEach(c => addCardPair(c.term, c.def));
+  switchModalTab('manual');
   document.getElementById('create-modal').classList.add('open');
-}
-function closeCreateModal() { document.getElementById('create-modal').classList.remove('open'); }
-function addCardPair(term='', def='') {
+};
+
+window.closeCreateModal = function() {
+  document.getElementById('create-modal').classList.remove('open');
+};
+
+window.addCardPair = function(term='', def='') {
   const c = document.createElement('div');
   c.className = 'card-pair';
   c.innerHTML = `<input class="form-input term-input" placeholder="용어" value="${esc(term)}" />
     <input class="form-input def-input" placeholder="뜻" value="${esc(def)}" />
     <button class="btn btn-sm btn-danger" onclick="this.parentElement.remove()"><i class="ti ti-trash"></i></button>`;
   document.getElementById('card-pairs-container').appendChild(c);
-}
-function saveSet() {
+};
+
+window.saveSet = async function() {
   const name = document.getElementById('set-name-input').value.trim();
   if (!name) { alert('세트 이름을 입력해주세요.'); return; }
-  const cards = [];
-  document.querySelectorAll('#card-pairs-container .card-pair').forEach(p => {
-    const t = p.querySelector('.term-input').value.trim();
-    const d = p.querySelector('.def-input').value.trim();
-    if (t || d) cards.push({ term: t, def: d });
-  });
-  if (!cards.length) { alert('카드를 최소 1개 이상 추가해주세요.'); return; }
-  if (editingIndex >= 0) sets[editingIndex] = { name, cards };
-  else sets.push({ name, cards });
-  saveSets(); closeCreateModal(); renderSets();
-  if (editingIndex >= 0 && currentSetIndex === editingIndex) studySet(editingIndex);
-}
-function deleteSet(i) {
+  let cards = [];
+  if (activeModalTab === 'import') {
+    const text = document.getElementById('import-textarea').value;
+    if (!text.trim()) { alert('단어 데이터를 붙여넣어 주세요.'); return; }
+    const result = parseImport(text);
+    if (!result.cards.length) { alert('불러온 카드가 없습니다. 구분자를 확인해 주세요.'); return; }
+    cards = result.cards;
+  } else {
+    document.querySelectorAll('#card-pairs-container .card-pair').forEach(p => {
+      const t = p.querySelector('.term-input').value.trim();
+      const d = p.querySelector('.def-input').value.trim();
+      if (t || d) cards.push({ term: t, def: d });
+    });
+    if (!cards.length) { alert('카드를 최소 1개 이상 추가해주세요.'); return; }
+  }
+
+  showLoading(true);
+  try {
+    const setData = { name, cards, uid: currentUser.username };
+    if (editingIndex >= 0) {
+      await saveSetToDB(setData, sets[editingIndex]._id);
+      sets[editingIndex] = { ...setData, _id: sets[editingIndex]._id };
+    } else {
+      const newId = await saveSetToDB(setData, null);
+      sets.push({ ...setData, _id: newId });
+    }
+    closeCreateModal();
+    renderSets();
+    if (editingIndex >= 0 && currentSetIndex === editingIndex) studySet(editingIndex);
+  } catch(e) {
+    alert('저장 중 오류가 발생했습니다.');
+  }
+  showLoading(false);
+};
+
+window.deleteSet = async function(i) {
   if (!confirm('이 세트를 삭제할까요?')) return;
-  sets.splice(i, 1); saveSets(); renderSets();
-  if (currentSetIndex === i) backToHome();
+  showLoading(true);
+  try {
+    await deleteSetFromDB(sets[i]._id);
+    sets.splice(i, 1);
+    renderSets();
+    if (currentSetIndex === i) backToHome();
+  } catch(e) { alert('삭제 중 오류가 발생했습니다.'); }
+  showLoading(false);
+};
+
+// ── Import ──
+window.switchModalTab = function(tab) {
+  activeModalTab = tab;
+  document.getElementById('tab-manual').style.display = tab === 'manual' ? '' : 'none';
+  document.getElementById('tab-import').style.display = tab === 'import' ? '' : 'none';
+  document.getElementById('mtab-manual').classList.toggle('active', tab === 'manual');
+  document.getElementById('mtab-import').classList.toggle('active', tab === 'import');
+};
+
+window.setSep = function(type, val, btn) {
+  if (type === 'term') termSep = val; else cardSep = val;
+  document.getElementById(type+'-sep-options').querySelectorAll('.sep-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(type+'-sep-custom').value = '';
+  updateImportPreview();
+};
+
+window.setSepCustom = function(type, val) {
+  if (!val) return;
+  if (type === 'term') termSep = val; else cardSep = val;
+  document.getElementById(type+'-sep-options').querySelectorAll('.sep-chip').forEach(c => c.classList.remove('active'));
+  updateImportPreview();
+};
+
+function parseImport(text) {
+  const rows = text.split(cardSep).map(r => r.trim()).filter(r => r.length > 0);
+  const cards = [], errors = [];
+  rows.forEach((row, i) => {
+    const idx = row.indexOf(termSep);
+    if (idx === -1) { errors.push(i+1); return; }
+    const term = row.slice(0, idx).trim();
+    const def = row.slice(idx + termSep.length).trim();
+    if (term || def) cards.push({ term, def });
+  });
+  return { cards, errors };
 }
-function studySet(i) {
+
+window.updateImportPreview = function() {
+  const text = document.getElementById('import-textarea').value;
+  const errEl = document.getElementById('import-error');
+  const previewEl = document.getElementById('import-preview');
+  const previewList = document.getElementById('import-preview-list');
+  const previewTitle = document.getElementById('import-preview-title');
+  if (!text.trim()) { errEl.style.display='none'; previewEl.style.display='none'; return; }
+  const { cards, errors } = parseImport(text);
+  errEl.style.display = errors.length ? '' : 'none';
+  if (errors.length) errEl.textContent = errors.length+'개 줄에서 구분자를 찾지 못했습니다. (줄: '+errors.slice(0,5).join(', ')+(errors.length>5?'…':'')+')';
+  if (cards.length) {
+    previewTitle.textContent = '미리보기 — '+cards.length+'개 단어';
+    previewList.innerHTML = cards.slice(0,8).map(c =>
+      '<div class="import-preview-item"><div class="import-preview-term">'+esc(c.term)+'</div><div class="import-preview-def">'+esc(c.def)+'</div></div>'
+    ).join('')+(cards.length>8?'<div style="font-size:12px;color:var(--text-hint);padding:4px 0;">+ '+(cards.length-8)+'개 더...</div>':'');
+    previewEl.style.display = '';
+  } else { previewEl.style.display='none'; }
+};
+
+// ── 학습 ──
+window.studySet = function(i) {
   currentSetIndex = i; cardIndex = 0; flipped = false;
   document.getElementById('home-section').style.display = 'none';
   document.getElementById('study-area').classList.add('open');
   document.getElementById('study-title').textContent = sets[i].name;
-  document.getElementById('study-badge').textContent = sets[i].cards.length + '개';
+  document.getElementById('study-badge').textContent = sets[i].cards.length+'개';
   setMode('flash');
-}
-function backToHome() {
+};
+
+window.backToHome = function() {
   document.getElementById('home-section').style.display = '';
   document.getElementById('study-area').classList.remove('open');
   currentSetIndex = -1;
-}
-function setMode(mode) {
+};
+
+window.setMode = function(mode) {
   currentMode = mode; cardIndex = 0; flipped = false;
   ['flash','quiz','list'].forEach(m => document.getElementById('tab-'+m).classList.toggle('active', m===mode));
   if (mode==='flash') renderFlash();
   else if (mode==='quiz') startQuiz();
   else renderList();
-}
+};
+
 function renderFlash() {
   const set = sets[currentSetIndex], card = set.cards[cardIndex];
   document.getElementById('mode-content').innerHTML = `
     <div class="flashcard-wrap">
       <div class="flashcard" onclick="flipCard()">
-        <span class="flashcard-side-label">${flipped ? '뜻' : '용어'}</span>
-        <div class="flashcard-word">${esc(flipped ? card.def : card.term)}</div>
-        ${flipped ? `<div class="flashcard-sub">${esc(card.term)}</div>` : ''}
-        <div class="flashcard-hint">${flipped ? '' : '클릭하여 뒤집기'}</div>
+        <span class="flashcard-side-label">${flipped?'뜻':'용어'}</span>
+        <div class="flashcard-word">${esc(flipped?card.def:card.term)}</div>
+        ${flipped?`<div class="flashcard-sub">${esc(card.term)}</div>`:''}
+        <div class="flashcard-hint">${flipped?'':'클릭하여 뒤집기'}</div>
       </div>
       <div class="card-nav">
         <button class="btn" onclick="prevCard()" ${cardIndex===0?'disabled':''}><i class="ti ti-arrow-left"></i></button>
@@ -264,42 +695,47 @@ function renderFlash() {
       <button class="btn btn-sm" onclick="shuffleCards()"><i class="ti ti-refresh"></i> 섞기</button>
     </div>`;
 }
-function flipCard() { flipped = !flipped; renderFlash(); }
-function prevCard() { if (cardIndex>0) { cardIndex--; flipped=false; renderFlash(); } }
-function nextCard() { const s=sets[currentSetIndex]; if(cardIndex<s.cards.length-1){cardIndex++;flipped=false;renderFlash();} }
-function shuffleCards() {
+
+window.flipCard = function() { flipped=!flipped; renderFlash(); };
+window.prevCard = function() { if(cardIndex>0){cardIndex--;flipped=false;renderFlash();} };
+window.nextCard = function() { const s=sets[currentSetIndex]; if(cardIndex<s.cards.length-1){cardIndex++;flipped=false;renderFlash();} };
+window.shuffleCards = function() {
   const s=sets[currentSetIndex];
   for(let i=s.cards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[s.cards[i],s.cards[j]]=[s.cards[j],s.cards[i]];}
   cardIndex=0;flipped=false;renderFlash();
-}
+};
+
 function startQuiz() {
   const set=sets[currentSetIndex];
   if(set.cards.length<2){document.getElementById('mode-content').innerHTML='<div class="empty-state">퀴즈 모드는 카드가 2개 이상 필요합니다.</div>';return;}
   quizState={q:0,score:0,order:[...set.cards].sort(()=>Math.random()-0.5)};
   renderQuiz();
 }
+
 function renderQuiz() {
   const set=sets[currentSetIndex],qs=quizState;
   if(qs.q>=qs.order.length){
-    document.getElementById('mode-content').innerHTML=`<div class="quiz-score"><div class="quiz-score-num">${qs.score} / ${qs.order.length}</div><div class="quiz-score-label">정답률 ${Math.round(qs.score/qs.order.length*100)}%</div><button class="btn btn-primary" onclick="startQuiz()"><i class="ti ti-refresh"></i> 다시 풀기</button></div>`;
+    document.getElementById('mode-content').innerHTML=`<div class="quiz-score"><div class="quiz-score-num">${qs.score} / ${qs.order.length}</div><div class="quiz-score-label">정답률 ${Math.round(qs.score/qs.order.length*100)}%</div><button class="btn btn-primary" onclick="startQuiz()" style="width:auto;padding:8px 20px;"><i class="ti ti-refresh"></i> 다시 풀기</button></div>`;
     return;
   }
   const card=qs.order[qs.q];
   const wrong=set.cards.map(c=>c.def).filter(d=>d!==card.def).sort(()=>Math.random()-0.5).slice(0,3);
   const opts=[...wrong,card.def].sort(()=>Math.random()-0.5);
-  document.getElementById('mode-content').innerHTML=`<div class="quiz-area"><div class="quiz-question"><div class="quiz-q-label">다음 용어의 뜻은?</div><div class="quiz-q-word">${esc(card.term)}</div></div><div class="quiz-options" id="quiz-opts">${opts.map(o=>`<div class="quiz-option" onclick="answerQuiz(this,'${esc(o)}','${esc(card.def)}')">${esc(o)}</div>`).join('')}</div><div style="text-align:center;font-size:13px;color:var(--text-muted);">${qs.q+1} / ${qs.order.length}</div></div>`;
+  document.getElementById('mode-content').innerHTML=`<div class="quiz-area"><div class="quiz-question"><div class="quiz-q-label">다음 용어의 뜻은?</div><div class="quiz-q-word">${esc(card.term)}</div></div><div class="quiz-options">${opts.map(o=>`<div class="quiz-option" onclick="answerQuiz(this,'${esc(o)}','${esc(card.def)}')">${esc(o)}</div>`).join('')}</div><div style="text-align:center;font-size:13px;color:var(--text-muted);">${qs.q+1} / ${qs.order.length}</div></div>`;
 }
-function answerQuiz(el,chosen,correct){
+
+window.answerQuiz = function(el,chosen,correct) {
   document.querySelectorAll('.quiz-option').forEach(o=>o.classList.add('locked'));
   if(chosen===correct){el.classList.add('correct');quizState.score++;}
   else{el.classList.add('wrong');document.querySelectorAll('.quiz-option').forEach(o=>{if(o.textContent===correct)o.classList.add('correct');});}
   setTimeout(()=>{quizState.q++;renderQuiz();},900);
-}
-function renderList(){
+};
+
+function renderList() {
   const set=sets[currentSetIndex];
   document.getElementById('mode-content').innerHTML=`<div class="list-view">${set.cards.map(c=>`<div class="list-item"><div class="list-term">${esc(c.term)}</div><div class="list-divider"></div><div class="list-def">${esc(c.def)}</div></div>`).join('')}</div>`;
 }
-loadSets();
+
 </script>
 </body>
 </html>
