@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>단어카드</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,300,0,0" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@19,300,0,0" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/tabler-icons.min.css" />
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -145,7 +145,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
 /* 수정, 삭제 등 모든 아이콘에 공통으로 적용할 스타일 */
 .custom-icon {
-  font-size: 20px;
+  font-size: 19px;
   color: #1f1f1f;
   font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20;
 }
@@ -156,7 +156,26 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   align-items: center;
   gap: 4px; /* 아이콘과 글자 사이 간격 */
 }
+/* 상태 표시줄 전체 배경 */
+.timer-bar-container {
+  width: 100%;
+  height: 10px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  margin-top: 15px;
+  margin-bottom: 15px;
+  overflow: hidden;
+}
 
+/* 줄어드는 색상 막대 */
+.timer-bar {
+  height: 100%;
+  width: 100%;
+  background-color: #e74c3c;
+  border-radius: 5px;
+  /* 1초 동안 일정한 속도(linear)로 너비가 변하도록 부드러운 애니메이션 적용 */
+  transition: width 1s linear; 
+}
 </style>
 </head>
 <body>
@@ -209,11 +228,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 <!-- 메인 앱 -->
 <div id="app" class="app">
   <nav class="nav">
-    <div class="nav-logo"><i class="ti ti-cards"></i> 단어카드</div>
+    <div class="nav-logo"><i class="ti ti-cards"></i>단어카드</div>
     <div class="nav-right">
       <span class="nav-user" id="nav-user"></span>
-      <button class="btn btn-sm" onclick="doLogout()"><i class="ti ti-logout"></i> 로그아웃</button>
-      <button class="btn btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent);" onclick="openCreateModal()"><i class="ti ti-plus"></i> 새 세트</button>
+      <button class="btn btn-sm" onclick="doLogout()"><i class="ti ti-logout"></i>로그아웃</button>
+      <button class="btn btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent);" onclick="openCreateModal()"><i class="ti ti-plus"></i>새 세트</button>
     </div>
   </nav>
 
@@ -307,7 +326,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       </div>
     </div>
     <div class="modal-actions">
-      <button class="btn" onclick="closeCreateModal()">취소</button>
+      <button class="btn" onclick="closeCreateModal()" style="width:auto;">취소</button>
       <button class="btn btn-primary" onclick="saveSet()" style="width:auto;">저장</button>
     </div>
   </div>
@@ -517,7 +536,7 @@ function renderSets() {
       <div class="set-card-actions">
         <button class="btn btn-sm" onclick="studySet(${i})"><i class="ti ti-player-play"></i>학습</button>
         <button class="btn btn-sm" onclick="editSet(${i})"><span class="material-symbols-outlined custom-edit-icon">edit</span></button>
-        <button class="btn btn-sm" onclick="deleteSet(${i})"><span class="material-symbols-outlined custom-icon">delete</span></button>
+        <button class="btn btn-sm btn-danger" onclick="deleteSet(${i})"><span class="material-symbols-outlined custom-icon">delete</span></button>
       </div>
     </div>`).join('');
 }
@@ -693,6 +712,35 @@ window.setMode = function(mode) {
   else renderList();
 };
 
+document.addEventListener('keydown', function(event) {
+  // 1. 현재 화면에 플래시카드가 띄워져 있는지 확인 (다른 모드일 때 작동 방지)
+  const isFlashcardMode = document.querySelector('.flashcard-wrap');
+  
+  // 2. 사용자가 입력창(input 등)에 글자를 치고 있을 때는 단축키 작동 방지
+  const isTyping = event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA';
+
+  if (isFlashcardMode && !isTyping) {
+    if (event.code === 'Space') {
+      event.preventDefault(); // 중요: 스페이스바를 누를 때 화면이 스크롤되어 내려가는 기본 동작을 막아줍니다.
+      if (typeof flipCard === 'function') flipCard();
+    } 
+    else if (event.code === 'ArrowLeft') {
+      // 이전 버튼이 비활성화(disabled) 상태가 아닐 때만 작동
+      const prevBtn = document.querySelector('.card-nav button:first-child');
+      if (prevBtn && !prevBtn.disabled) {
+        if (typeof prevCard === 'function') prevCard();
+      }
+    } 
+    else if (event.code === 'ArrowRight') {
+      // 다음 버튼이 비활성화(disabled) 상태가 아닐 때만 작동
+      const nextBtn = document.querySelector('.card-nav button:last-child');
+      if (nextBtn && !nextBtn.disabled) {
+        if (typeof nextCard === 'function') nextCard();
+      }
+    }
+  }
+});
+
 function renderFlash() {
   const set = sets[currentSetIndex], card = set.cards[cardIndex];
   document.getElementById('mode-content').innerHTML = `
@@ -704,9 +752,9 @@ function renderFlash() {
         <div class="flashcard-hint">${flipped?'':'클릭하여 뒤집기'}</div>
       </div>
       <div class="card-nav">
-        <button class="btn" onclick="prevCard()" ${cardIndex===0?'disabled':''}><i class="ti ti-arrow-left"></i></button>
+        <button class="btn" onclick="prevCard()" ${cardIndex===0?'disabled':''}><span class="material-symbols-outlined custom-icon">arrow_back_ios</span></button>
         <span class="card-progress">${cardIndex+1} / ${set.cards.length}</span>
-        <button class="btn" onclick="nextCard()" ${cardIndex===set.cards.length-1?'disabled':''}><i class="ti ti-arrow-right"></i></button>
+        <button class="btn" onclick="nextCard()" ${cardIndex===set.cards.length-1?'disabled':''}><span class="material-symbols-outlined custom-icon">arrow_forward_ios</span></button>
       </div>
       <button class="btn btn-sm" onclick="shuffleCards()"><i class="ti ti-refresh"></i>섞기</button>
     </div>`;
@@ -736,7 +784,6 @@ function startQuiz() {
 function renderQuiz() {
   const set = sets[currentSetIndex], qs = quizState;
   
-  // 새 문제를 그리기 전에 기존에 돌고 있던 타이머가 있다면 멈춤
   if (qs.timerId) clearInterval(qs.timerId);
 
   if (qs.q >= qs.order.length) {
@@ -748,13 +795,17 @@ function renderQuiz() {
   const wrong = set.cards.map(c => c.def).filter(d => d !== card.def).sort(() => Math.random() - 0.5).slice(0, 3);
   const opts = [...wrong, card.def].sort(() => Math.random() - 0.5);
   
-  // HTML 렌더링: 남은 시간을 보여줄 <div id="quiz-timer"> 추가
+  let timeLeft = qs.timeLimit; // 사용자가 설정한 전체 시간
+
+  // HTML 렌더링: 숫자 대신 timer-bar-container와 timer-bar를 넣습니다.
   document.getElementById('mode-content').innerHTML = `
     <div class="quiz-area">
       <div class="quiz-question">
         <div class="quiz-q-label">다음 용어의 뜻은?</div>
         <div class="quiz-q-word">${esc(card.term)}</div>
-        <div style="font-weight:bold; color:#e74c3c; margin-top:10px;">남은 시간: <span id="quiz-timer">10</span>초</div>
+        <div class="timer-bar-container">
+          <div id="timer-bar" class="timer-bar" style="width: 100%;"></div>
+        </div>
       </div>
       <div class="quiz-options">
         ${opts.map(o => `<div class="quiz-option" onclick="answerQuiz(this,'${esc(o)}','${esc(card.def)}')">${esc(o)}</div>`).join('')}
@@ -762,19 +813,22 @@ function renderQuiz() {
       <div style="text-align:center;font-size:13px;color:var(--text-muted);">${qs.q + 1} / ${qs.order.length}</div>
     </div>`;
 
-  // 카운트다운 타이머 시작
-  let timeLeft = 10;
+  // 상태 표시줄 타이머 로직
   qs.timerId = setInterval(() => {
     timeLeft--;
-    const timerEl = document.getElementById('quiz-timer');
-    if (timerEl) timerEl.textContent = timeLeft;
+    const timerBar = document.getElementById('timer-bar');
+    
+    if (timerBar) {
+      // (남은 시간 / 전체 시간) * 100 = 현재 남은 퍼센트 계산
+      const percentage = (timeLeft / qs.timeLimit) * 100;
+      timerBar.style.width = percentage + '%';
+    }
 
-    // 0초가 되면 시간 초과(오답) 처리
     if (timeLeft <= 0) {
       clearInterval(qs.timerId);
       handleTimeOut(card.def);
     }
-  }, 1000); // 1초마다 실행
+  }, 1000);
 }
 
 // 시간 초과 시 실행될 함수 (오답 처리와 동일한 로직)
