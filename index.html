@@ -201,20 +201,56 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   /* 1초 동안 일정한 속도(linear)로 너비가 변하도록 부드러운 애니메이션 적용 */
   transition: width 1s linear; 
 }
+
+/* ── 짝 맞추기 게임 (Match Game) ── */
+.match-area { max-width: 600px; margin: 0 auto; position: relative; }
+.match-grid { 
+  display: grid; 
+  grid-template-columns: repeat(2, 1fr); /* 2열 구조 */
+  gap: 12px; 
+  margin-bottom: 1rem; 
+}
+.match-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border-hover);
+  border-radius: var(--radius-md);
+  padding: 20px 12px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 70px;
+}
+.match-card.selected {/* 카드 선택 상태 */
+  border-color: var(--accent);
+  background-color: var(--info-bg);
+  color: var(--accent);
+  transform: scale(1.02);
+}
+.match-card.matched { /* 짝 맞추기 성공 상태 */
+  visibility: hidden; /* 정답을 맞추면 화면에서 사라지게 처리 */
+  pointer-events: none;
+}
+
 </style>
 </head>
 <body>
 
 <!-- 로딩 -->
 <div id="loading-wrap" class="loading-wrap">
-  <i class="ti ti-loader" style="font-size:22px;animation:spin 1s linear infinite;"></i> 불러오는 중...
+  <i class="ti ti-loader" style="font-size:22px;animation:spin 1s linear infinite;"></i>불러오는 중...
 </div>
 <style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>
 
 <!-- 로그인/회원가입 -->
 <div id="auth-wrap" class="auth-wrap" style="display:none;">
   <div class="auth-card">
-    <div class="auth-logo"><i class="ti ti-cards"></i> 단어카드</div>
+    <div class="auth-logo"><i class="ti ti-cards"></i>단어카드</div>
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="switchAuthTab('login')" id="atab-login">로그인</button>
       <button class="auth-tab" onclick="switchAuthTab('signup')" id="atab-signup">회원가입</button>
@@ -229,7 +265,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <input class="form-input" id="login-pw" type="password" placeholder="비밀번호 입력" autocomplete="current-password" />
       </div>
       <div id="login-msg" class="auth-msg"></div>
-      <button class="btn btn-primary" onclick="doLogin()"><i class="ti ti-login"></i> 로그인</button>
+      <button class="btn btn-primary" onclick="doLogin()"><i class="ti ti-login"></i>로그인</button>
     </div>
     <div id="auth-signup" style="display:none;">
       <div class="form-group">
@@ -245,7 +281,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <input class="form-input" id="signup-pw2" type="password" placeholder="비밀번호 재입력" autocomplete="new-password" />
       </div>
       <div id="signup-msg" class="auth-msg"></div>
-      <button class="btn btn-primary" onclick="doSignup()"><i class="ti ti-user-plus"></i> 회원가입</button>
+      <button class="btn btn-primary" onclick="doSignup()"><i class="ti ti-user-plus"></i>회원가입</button>
     </div>
   </div>
 </div>
@@ -282,8 +318,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <span class="badge" id="study-badge"></span>
       </div>
       <div class="mode-tabs">
-        <button class="mode-tab active" onclick="setMode('flash')" id="tab-flash"><i class="ti ti-cards"></i> 플래시카드</button>
-        <button class="mode-tab" onclick="setMode('quiz')" id="tab-quiz"><i class="ti ti-list-check"></i> 퀴즈</button>
+        <button class="mode-tab active" onclick="setMode('flash')" id="tab-flash"><i class="ti ti-cards"></i>플래시카드</button>
+        <button class="mode-tab" onclick="setMode('quiz')" id="tab-quiz"><i class="ti ti-list-check"></i>퀴즈</button>
+        <button class="mode-tab" onclick="setMode('match')" id="tab-match"><i class="ti ti-layers-intersect"></i>짝 맞추기</button>
         <button class="mode-tab" onclick="setMode('list')" id="tab-list"><i class="ti ti-layout-list"></i>목록</button>
       </div>
       <div id="mode-content"></div>
@@ -300,14 +337,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <input class="form-input" id="set-name-input" placeholder="예: 영어 단어 Day 1" />
     </div>
     <div class="modal-tabs">
-      <button class="modal-tab active" onclick="switchModalTab('manual')" id="mtab-manual"><i class="ti ti-edit"></i> 직접 입력</button>
-      <button class="modal-tab" onclick="switchModalTab('import')" id="mtab-import"><i class="ti ti-upload"></i> 일괄 불러오기</button>
+      <button class="modal-tab active" onclick="switchModalTab('manual')" id="mtab-manual"><i class="ti ti-edit"></i>직접 입력</button>
+      <button class="modal-tab" onclick="switchModalTab('import')" id="mtab-import"><i class="ti ti-upload"></i>일괄 불러오기</button>
     </div>
     <div id="tab-manual">
       <div class="form-group">
         <label class="form-label">단어 카드 (용어 / 뜻)</label>
         <div id="card-pairs-container"></div>
-        <button class="btn btn-sm" onclick="addCardPair()" style="margin-top:8px;"><i class="ti ti-plus"></i> 카드 추가</button>
+        <button class="btn btn-sm" onclick="addCardPair()" style="margin-top:8px;"><i class="ti ti-plus"></i>카드 추가</button>
       </div>
     </div>
     <div id="tab-import" style="display:none;">
@@ -731,9 +768,14 @@ window.backToHome = function() {
 
 window.setMode = function(mode) {
   currentMode = mode; cardIndex = 0; flipped = false;
-  ['flash','quiz','list'].forEach(m => document.getElementById('tab-'+m).classList.toggle('active', m===mode));
+  ['flash','quiz','match','list'].forEach(m => {
+    const el = document.getElementById('tab-'+m);
+    if(el) el.classList.toggle('active', m===mode);
+  });
+  
   if (mode==='flash') renderFlash();
   else if (mode==='quiz') startQuiz();
+  else if (mode==='match') startMatch(); // 짝 맞추기 시작
   else renderList();
 };
 
@@ -843,17 +885,24 @@ async function startQuiz() {
   }
 
   let initialTime = 10; // 기본값 10초
-  const user = firebase.auth().currentUser;
-
-  if (user) {
+  
+  // [변경] Firebase Auth 대신, 현재 수동 로그인된 전역 변수(currentUser)를 확인합니다.
+  if (currentUser && currentUser.username) {
     try {
-      // 1. Firebase에서 해당 유저의 설정 문서 가져오기
-      const doc = await db.collection("users").doc(user.uid).get();
-      if (doc.exists && doc.data().quizTimeLimit) {
-        initialTime = doc.data().quizTimeLimit; // 저장된 시간이 있다면 그 값으로 교체
+      // 수동 로그인 시 'users' 컬렉션에 문서를 만들 때 id를 문서 ID(docId)로 쓰지 않았다면,
+      // 가장 확실한 방법은 query를 사용해 username 필드로 해당 유저의 문서를 찾는 것입니다.
+      const q = query(collection(db, 'users'), where('username', '==', currentUser.username));
+      const snap = await getDocs(q);
+      
+      if (!snap.empty) {
+        const userData = snap.docs[0].data();
+        if (userData.quizTimeLimit) {
+          initialTime = userData.quizTimeLimit; // 저장된 제한시간이 있다면 적용
+          console.log("DB로부터 동기화된 시간 불러옴:", initialTime);
+        }
       }
     } catch (error) {
-      console.error("설정 불러오기 실패:", error);
+      console.error("Firestore에서 설정 불러오기 실패:", error);
     }
   } else {
     // 비로그인 유저는 로컬스토리지 확인
@@ -873,6 +922,37 @@ async function startQuiz() {
   renderQuiz();
 }
 
+// 2. 사용자가 시간을 바꿀 때 실시간 수정 및 DB 저장
+window.updateTimeLimit = async function(value) {
+  let newTime = parseInt(value, 10);
+  if (isNaN(newTime) || newTime < 1) newTime = 1; 
+  
+  if (quizState) {
+    quizState.timeLimit = newTime;
+  }
+
+  // [변경] 수동 로그인된 유저가 맞는지 확인
+  if (currentUser && currentUser.username) {
+    try {
+      // 유저의 문서를 정확히 찾아 업데이트하기 위해 수동 로그인 시 저장했던 docId를 활용합니다.
+      if (currentUser.docId) {
+        const userDocRef = doc(db, "users", currentUser.docId);
+        
+        // updateDoc을 사용하여 기존 회원 정보는 놔두고 quizTimeLimit만 새로 저장/수정합니다.
+        await updateDoc(userDocRef, {
+          quizTimeLimit: newTime
+        });
+        console.log("수동 로그인 유저의 DB에 제한 시간 동기화 완료!");
+      }
+    } catch (error) {
+      console.error("Firestore에 설정 저장 실패:", error);
+    }
+  } else {
+    // 비로그인 상태라면 임시로 로컬스토리지에 저장
+    localStorage.setItem('savedQuizTime', newTime);
+  }
+};
+
 // 2. 톱니바퀴를 누르면 모달창을 켜고 끄는 함수
 window.toggleSettingsModal = function() {
   const modal = document.getElementById('quiz-settings-modal');
@@ -885,33 +965,6 @@ window.toggleSettingsModal = function() {
   }
 };
 
-// db는 이미 초기화된 Firebase Firestore 인스턴스여야 합니다.
-window.updateTimeLimit = async function(value) {
-  let newTime = parseInt(value, 10);
-  if (isNaN(newTime) || newTime < 1) newTime = 1; 
-  
-  if (quizState) {
-    quizState.timeLimit = newTime;
-  }
-
-  // 1. 현재 로그인한 유저 정보 가져오기
-  const user = firebase.auth().currentUser; // Firebase Auth 버전에 따라 문법이 다를 수 있습니다.
-  
-  if (user) {
-    // 2. 로그인된 상태라면 Firebase Firestore의 유저 문서에 제한 시간 저장
-    try {
-      await db.collection("users").doc(user.uid).set({
-        quizTimeLimit: newTime
-      }, { merge: true }); // merge: true를 해야 다른 회원 정보(이름 등)를 덮어쓰지 않고 이 값만 추가됩니다.
-      console.log("Firebase에 시간 설정 저장 완료!");
-    } catch (error) {
-      console.error("설정 저장 실패:", error);
-    }
-  } else {
-    // 3. 비로그인 상태라면 임시로 로컬스토리지에 저장 (방어 코드)
-    localStorage.setItem('savedQuizTime', newTime);
-  }
-};
 
 function renderQuiz() {
   const set = sets[currentSetIndex], qs = quizState;
@@ -919,7 +972,7 @@ function renderQuiz() {
   if (qs.timerId) clearInterval(qs.timerId);
 
   if (qs.q >= qs.order.length) {
-    document.getElementById('mode-content').innerHTML = `<div class="quiz-score"><div class="quiz-score-num">${qs.score} / ${qs.order.length}</div><div class="quiz-score-label">정답률 ${Math.round(qs.score/qs.order.length*100)}%</div><button class="btn btn-primary" onclick="startQuiz()" style="width:auto;padding:8px 20px;"><i class="ti ti-refresh"></i> 다시 풀기</button></div>`;
+    document.getElementById('mode-content').innerHTML = `<div class="quiz-score"><div class="quiz-score-num">${qs.score} / ${qs.order.length}</div><div class="quiz-score-label">정답률 ${Math.round(qs.score/qs.order.length*100)}%</div><button class="btn btn-primary" onclick="startQuiz()" style="width:auto;padding:8px 20px;"><i class="ti ti-refresh"></i>다시 풀기</button></div>`;
     return;
   }
 
@@ -1026,6 +1079,192 @@ window.answerQuiz = function(el, chosen, correct) {
     quizState.q++;
     renderQuiz();
   }, 900);
+};
+
+
+// ── 짝 맞추기 게임 상태 ──
+let matchState = null;
+
+// 1. 게임 시작 및 시간 설정 불러오기
+async function startMatch() {
+  const set = sets[currentSetIndex];
+  if (set.cards.length < 2) {
+    document.getElementById('mode-content').innerHTML = '<div class="empty-state">짝 맞추기 모드는 카드가 2개 이상 필요합니다.</div>';
+    return;
+  }
+
+  // 퀴즈와 동일하게 저장된 설정 시간 연동
+  let initialTime = 10; 
+  if (currentUser && currentUser.username) {
+    try {
+      const q = query(collection(db, 'users'), where('username', '==', currentUser.username));
+      const snap = await getDocs(q);
+      if (!snap.empty && snap.docs[0].data().quizTimeLimit) {
+        initialTime = snap.docs[0].data().quizTimeLimit;
+      }
+    } catch (e) { console.error(e); }
+  } else {
+    const savedTime = localStorage.getItem('savedQuizTime');
+    if (savedTime) initialTime = parseInt(savedTime, 10);
+  }
+
+  // 화면에 뿌릴 최대 5개 단어 추출 후 데이터 가공 (용어 카드 5개, 뜻 카드 5개 분리)
+  const gameCards = [...set.cards].sort(() => Math.random() - 0.5).slice(0, 5);
+  let pool = [];
+  
+  gameCards.forEach(c => {
+    pool.push({ id: c.term, text: c.term, type: 'term', pairId: c.def });
+    pool.push({ id: c.def, text: c.def, type: 'def', pairId: c.term });
+  });
+  
+  // 10개의 카드를 완전히 무작위로 혼합
+  pool.sort(() => Math.random() - 0.5);
+
+  matchState = {
+    pool: pool,
+    selectedCard: null, // 현재 선택한 카드 객체 저장
+    matchedCount: 0,    // 맞춘 단어 쌍의 개수 (5개가 되면 승리)
+    timerId: null,
+    timeLimit: initialTime,
+    totalPairs: gameCards.length
+  };
+
+  renderMatch();
+}
+
+// 2. 화면 렌더링 및 타이머 시작
+function renderMatch() {
+  const ms = matchState;
+  if (ms.timerId) clearInterval(ms.timerId);
+
+  document.getElementById('mode-content').innerHTML = `
+    <div class="match-area">
+      <div style="text-align: right; margin-bottom: 10px;">
+        <button class="btn btn-sm" onclick="toggleSettingsModal()" style="background: none; border: none; padding: 5px;">
+          <span class="material-symbols-outlined custom-icon" style="font-size: 24px;">settings</span>
+        </button>
+      </div>
+
+      <div id="quiz-settings-modal" class="quiz-modal" style="display: none;">
+        <div class="quiz-modal-content">
+          <h4>게임 설정</h4>
+          <hr>
+          <div style="margin: 15px 0;">
+            <label for="runtime-timer-input">제한 시간: </label>
+            <input type="number" id="runtime-timer-input" value="${ms.timeLimit}" min="1" max="60" 
+                   oninput="updateMatchTimeLimit(this.value)" 
+                   style="width: 60px; text-align: center; padding: 5px; border: 1px solid #ccc; border-radius: 4px;"> 초
+          </div>
+          <button class="btn btn-sm btn-primary" onclick="toggleSettingsModal()">닫기</button>
+        </div>
+      </div>
+
+      <div class="timer-bar-container">
+        <div id="match-timer-bar" class="timer-bar" style="width: 100%;"></div>
+      </div>
+      
+      <div class="match-grid">
+        ${ms.pool.map((c, idx) => `
+          <div id="m-card-${idx}" class="match-card" onclick="selectMatchCard(${idx})">
+            ${esc(c.text)}
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+
+  let timeLeft = ms.timeLimit;
+  ms.timerId = setInterval(() => {
+    timeLeft--;
+    const timerBar = document.getElementById('match-timer-bar');
+    if (timerBar) {
+      const percentage = Math.max(0, (timeLeft / ms.timeLimit) * 100);
+      timerBar.style.width = percentage + '%';
+    }
+
+    if (timeLeft <= 0) {
+      clearInterval(ms.timerId);
+      endMatchGame(false); // 시간 초과 종료
+    }
+  }, 1000);
+}
+
+// 3. 카드 클릭 이벤트 처리
+window.selectMatchCard = function(idx) {
+  const ms = matchState;
+  const targetCard = ms.pool[idx];
+  const targetEl = document.getElementById(`m-card-${idx}`);
+
+  // 이미 맞춰서 없어진 카드거나 자기 자신을 다시 누른 경우 무시
+  if (targetEl.classList.contains('matched') || targetEl.classList.contains('selected')) return;
+
+  // 첫 번째 카드 선택 시
+  if (!ms.selectedCard) {
+    ms.selectedCard = { card: targetCard, idx: idx };
+    targetEl.classList.add('selected');
+  } 
+  // 두 번째 카드 선택 시 (검증)
+  else {
+    const first = ms.selectedCard;
+    const firstEl = document.getElementById(`m-card-${first.idx}`);
+    
+    // 정답 체크: 첫 번째 카드의 pairId가 두 번째 카드의 id와 일치하는가?
+    if (first.card.pairId === targetCard.id) {
+      // 짝 맞추기 성공
+      firstEl.classList.remove('selected');
+      firstEl.classList.add('matched');
+      targetEl.classList.add('matched');
+      ms.matchedCount++;
+
+      // 모든 카드 쌍(5개)을 다 맞췄다면 게임 클리어
+      if (ms.matchedCount === ms.totalPairs) {
+        clearInterval(ms.timerId);
+        endMatchGame(true);
+      }
+    } else {
+      // 짝 맞추기 실패: 잠깐 보여줬다가 해제하기 위해 일시적으로 클릭 잠금
+      document.querySelectorAll('.match-card').forEach(el => el.style.pointerEvents = 'none');
+      targetEl.classList.add('selected');
+      
+      setTimeout(() => {
+        firstEl.classList.remove('selected');
+        targetEl.classList.remove('selected');
+        // 클릭 잠금 해제
+        document.querySelectorAll('.match-card').forEach(el => el.style.pointerEvents = '');
+      }, 400);
+    }
+    ms.selectedCard = null; // 선택 초기화
+  }
+};
+
+// 4. 게임 결과 렌더링 (성공 또는 시간 초과 타임아웃)
+function endMatchGame(isWin) {
+  if (matchState.timerId) clearInterval(matchState.timerId);
+  
+  if (isWin) {
+    document.getElementById('mode-content').innerHTML = `
+      <div class="quiz-score">
+        <div class="quiz-score-num" style="color: #27500A;">SUCCESS!</div>
+        <div class="quiz-score-label">제한 시간 내에 모든 짝을 맞췄습니다!</div>
+        <button class="btn btn-primary" onclick="startMatch()" style="width:auto;padding:8px 20px;"><i class="ti ti-refresh"></i> 다시 하기</button>
+      </div>`;
+  } else {
+    document.getElementById('mode-content').innerHTML = `
+      <div class="quiz-score">
+        <div class="quiz-score-num" style="color: var(--danger-border);">TIME OUT</div>
+        <div class="quiz-score-label">시간 초과! 아쉽게도 짝을 맞추지 못했습니다.</div>
+        <button class="btn btn-primary" onclick="startMatch()" style="width:auto;padding:8px 20px;"><i class="ti ti-refresh"></i> 다시 시도</button>
+      </div>`;
+  }
+}
+
+// 5. 모달을 통한 실시간 시간 변경 핸들러 추가
+window.updateMatchTimeLimit = function(value) {
+  window.updateTimeLimit(value); // 기존 Firestore/로컬스토리지 저장용 함수 호출
+  let newTime = parseInt(value, 10);
+  if (isNaN(newTime) || newTime < 1) newTime = 1;
+  if (matchState) {
+    matchState.timeLimit = newTime; // 현재 흐르는 게임 시간 분모도 동기화
+  }
 };
 
 function renderList() {
