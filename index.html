@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>단어카드</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@19,300,0,0" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,300,0,0" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/tabler-icons.min.css" />
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -156,6 +156,31 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   align-items: center;
   gap: 4px; /* 아이콘과 글자 사이 간격 */
 }
+
+/* 모달 배경 (어둡게 처리) */
+.quiz-modal {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+  border-radius: 8px;
+}
+
+/* 모달 실제 상자 내부 디자인 */
+.quiz-modal-content {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  min-width: 200px;
+}
+.quiz-modal-content h4 { margin: 0 0 10px 0; font-size: 16px; }
+.quiz-modal-content hr { border: 0; height: 1px; background: #eee; }
+
 /* 상태 표시줄 전체 배경 */
 .timer-bar-container {
   width: 100%;
@@ -535,7 +560,7 @@ function renderSets() {
       <div class="set-card-meta">${s.cards.length}개 단어</div>
       <div class="set-card-actions">
         <button class="btn btn-sm" onclick="studySet(${i})"><i class="ti ti-player-play"></i>학습</button>
-        <button class="btn btn-sm" onclick="editSet(${i})"><span class="material-symbols-outlined custom-edit-icon">edit</span></button>
+        <button class="btn btn-sm" onclick="editSet(${i})"><span class="material-symbols-outlined custom-icon">edit</span></button>
         <button class="btn btn-sm btn-danger" onclick="deleteSet(${i})"><span class="material-symbols-outlined custom-icon">delete</span></button>
       </div>
     </div>`).join('');
@@ -741,6 +766,46 @@ document.addEventListener('keydown', function(event) {
   }
 });
 
+// 플래시카드 스마트폰 스와이프
+// 터치 시작과 끝의 X좌표를 저장할 변수
+let touchStartX = 0;
+let touchEndX = 0;
+
+document.addEventListener('touchstart', function(event) {
+  // 터치가 시작된 화면의 X 좌표 저장
+  touchStartX = event.changedTouches[0].screenX;
+});
+
+document.addEventListener('touchend', function(event) {
+  // 터치가 끝난 화면의 X 좌표 저장
+  touchEndX = event.changedTouches[0].screenX;
+  handleSwipe();
+});
+
+function handleSwipe() {
+  const isFlashcardMode = document.querySelector('.flashcard-wrap');
+  if (!isFlashcardMode) return;
+
+  // 스와이프로 인정할 최소 이동 거리 (50px 이상 밀었을 때만 작동)
+  const swipeThreshold = 50; 
+
+  // 1. 왼쪽으로 밀었을 때 (다음 카드)
+  if (touchEndX < touchStartX - swipeThreshold) {
+    const nextBtn = document.querySelector('.card-nav button:last-child');
+    if (nextBtn && !nextBtn.disabled && typeof nextCard === 'function') {
+      nextCard();
+    }
+  }
+  // 2. 오른쪽으로 밀었을 때 (이전 카드)
+  else if (touchEndX > touchStartX + swipeThreshold) {
+    const prevBtn = document.querySelector('.card-nav button:first-child');
+    if (prevBtn && !prevBtn.disabled && typeof prevCard === 'function') {
+      prevCard();
+    }
+  }
+}
+
+
 function renderFlash() {
   const set = sets[currentSetIndex], card = set.cards[cardIndex];
   document.getElementById('mode-content').innerHTML = `
@@ -769,17 +834,84 @@ window.shuffleCards = function() {
   cardIndex=0;flipped=false;renderFlash();
 };
 
-// 전역 타이머 변수를 관리하기 위해 quizState에 timerId를 추가합니다.
-function startQuiz() {
+// 1. 퀴즈 시작할 때 저장된 시간 불러오기
+async function startQuiz() {
   const set = sets[currentSetIndex];
   if (set.cards.length < 2) {
     document.getElementById('mode-content').innerHTML = '<div class="empty-state">퀴즈 모드는 카드가 2개 이상 필요합니다.</div>';
     return;
   }
-  // timerId 속성 추가
-  quizState = { q: 0, score: 0, order: [...set.cards].sort(() => Math.random() - 0.5), timerId: null };
+
+  let initialTime = 10; // 기본값 10초
+  const user = firebase.auth().currentUser;
+
+  if (user) {
+    try {
+      // 1. Firebase에서 해당 유저의 설정 문서 가져오기
+      const doc = await db.collection("users").doc(user.uid).get();
+      if (doc.exists && doc.data().quizTimeLimit) {
+        initialTime = doc.data().quizTimeLimit; // 저장된 시간이 있다면 그 값으로 교체
+      }
+    } catch (error) {
+      console.error("설정 불러오기 실패:", error);
+    }
+  } else {
+    // 비로그인 유저는 로컬스토리지 확인
+    const savedTime = localStorage.getItem('savedQuizTime');
+    if (savedTime) initialTime = parseInt(savedTime, 10);
+  }
+
+  // 2. 불러온 최종 시간으로 퀴즈 상태 초기화
+  quizState = { 
+    q: 0, 
+    score: 0, 
+    order: [...set.cards].sort(() => Math.random() - 0.5), 
+    timerId: null,
+    timeLimit: initialTime 
+  };
+  
   renderQuiz();
 }
+
+// 2. 톱니바퀴를 누르면 모달창을 켜고 끄는 함수
+window.toggleSettingsModal = function() {
+  const modal = document.getElementById('quiz-settings-modal');
+  if (modal) {
+    if (modal.style.display === 'none') {
+      modal.style.display = 'flex'; // 켜기
+    } else {
+      modal.style.display = 'none';  // 끄기
+    }
+  }
+};
+
+// db는 이미 초기화된 Firebase Firestore 인스턴스여야 합니다.
+window.updateTimeLimit = async function(value) {
+  let newTime = parseInt(value, 10);
+  if (isNaN(newTime) || newTime < 1) newTime = 1; 
+  
+  if (quizState) {
+    quizState.timeLimit = newTime;
+  }
+
+  // 1. 현재 로그인한 유저 정보 가져오기
+  const user = firebase.auth().currentUser; // Firebase Auth 버전에 따라 문법이 다를 수 있습니다.
+  
+  if (user) {
+    // 2. 로그인된 상태라면 Firebase Firestore의 유저 문서에 제한 시간 저장
+    try {
+      await db.collection("users").doc(user.uid).set({
+        quizTimeLimit: newTime
+      }, { merge: true }); // merge: true를 해야 다른 회원 정보(이름 등)를 덮어쓰지 않고 이 값만 추가됩니다.
+      console.log("Firebase에 시간 설정 저장 완료!");
+    } catch (error) {
+      console.error("설정 저장 실패:", error);
+    }
+  } else {
+    // 3. 비로그인 상태라면 임시로 로컬스토리지에 저장 (방어 코드)
+    localStorage.setItem('savedQuizTime', newTime);
+  }
+};
 
 function renderQuiz() {
   const set = sets[currentSetIndex], qs = quizState;
@@ -795,11 +927,30 @@ function renderQuiz() {
   const wrong = set.cards.map(c => c.def).filter(d => d !== card.def).sort(() => Math.random() - 0.5).slice(0, 3);
   const opts = [...wrong, card.def].sort(() => Math.random() - 0.5);
   
-  let timeLeft = qs.timeLimit; // 사용자가 설정한 전체 시간
+  let timeLeft = qs.timeLimit;
 
-  // HTML 렌더링: 숫자 대신 timer-bar-container와 timer-bar를 넣습니다.
   document.getElementById('mode-content').innerHTML = `
-    <div class="quiz-area">
+    <div class="quiz-area" style="position: relative;">
+      <div style="text-align: right; margin-bottom: 10px;">
+        <button class="btn btn-sm" onclick="toggleSettingsModal()" style="background: none; border: none; padding: 5px;">
+          <span class="material-symbols-outlined custom-icon" style="font-size: 24px;">settings</span>
+        </button>
+      </div>
+
+      <div id="quiz-settings-modal" class="quiz-modal" style="display: none;">
+        <div class="quiz-modal-content">
+          <h4>퀴즈 설정</h4>
+          <hr>
+          <div style="margin: 15px 0;">
+            <label for="runtime-timer-input">제한 시간: </label>
+            <input type="number" id="runtime-timer-input" value="${qs.timeLimit}" min="1" max="60" 
+                   oninput="updateTimeLimit(this.value)" 
+                   style="width: 60px; text-align: center; padding: 5px; border: 1px solid #ccc; border-radius: 4px;"> 초
+          </div>
+          <button class="btn btn-sm btn-primary" onclick="toggleSettingsModal()">닫기</button>
+        </div>
+      </div>
+
       <div class="quiz-question">
         <div class="quiz-q-label">다음 용어의 뜻은?</div>
         <div class="quiz-q-word">${esc(card.term)}</div>
@@ -813,14 +964,13 @@ function renderQuiz() {
       <div style="text-align:center;font-size:13px;color:var(--text-muted);">${qs.q + 1} / ${qs.order.length}</div>
     </div>`;
 
-  // 상태 표시줄 타이머 로직
+  // 상태 표시줄 타이머 로직 (기존과 동일)
   qs.timerId = setInterval(() => {
     timeLeft--;
     const timerBar = document.getElementById('timer-bar');
     
     if (timerBar) {
-      // (남은 시간 / 전체 시간) * 100 = 현재 남은 퍼센트 계산
-      const percentage = (timeLeft / qs.timeLimit) * 100;
+      const percentage = Math.max(0, (timeLeft / qs.timeLimit) * 100);
       timerBar.style.width = percentage + '%';
     }
 
