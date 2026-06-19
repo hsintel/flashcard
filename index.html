@@ -901,37 +901,32 @@ async function startQuiz() {
 
   let initialTime = 10; // 기본값 10초
   
-  // [변경] Firebase Auth 대신, 현재 수동 로그인된 전역 변수(currentUser)를 확인합니다.
   if (currentUser && currentUser.username) {
     try {
-      // 수동 로그인 시 'users' 컬렉션에 문서를 만들 때 id를 문서 ID(docId)로 쓰지 않았다면,
-      // 가장 확실한 방법은 query를 사용해 username 필드로 해당 유저의 문서를 찾는 것입니다.
       const q = query(collection(db, 'users'), where('username', '==', currentUser.username));
       const snap = await getDocs(q);
-      
       if (!snap.empty) {
         const userData = snap.docs[0].data();
         if (userData.quizTimeLimit) {
-          initialTime = userData.quizTimeLimit; // 저장된 제한시간이 있다면 적용
-          console.log("DB로부터 동기화된 시간 불러옴:", initialTime);
+          initialTime = userData.quizTimeLimit;
         }
       }
     } catch (error) {
       console.error("Firestore에서 설정 불러오기 실패:", error);
     }
   } else {
-    // 비로그인 유저는 로컬스토리지 확인
     const savedTime = localStorage.getItem('savedQuizTime');
     if (savedTime) initialTime = parseInt(savedTime, 10);
   }
 
-  // 2. 불러온 최종 시간으로 퀴즈 상태 초기화
+  // [수정] timeLeft 프로퍼티를 initialTime으로 함께 초기화합니다.
   quizState = { 
     q: 0, 
     score: 0, 
     order: [...set.cards].sort(() => Math.random() - 0.5), 
     timerId: null,
-    timeLimit: initialTime 
+    timeLimit: initialTime,
+    timeLeft: initialTime 
   };
   
   renderQuiz();
@@ -1065,18 +1060,22 @@ function runQuizTimer() {
   const qs = quizState;
   if (!qs) return;
 
+  // 혹시 모를 중복 방지를 위해 기존 타이머 해제 후 시작
+  if (qs.timerId) clearInterval(qs.timerId);
+
   qs.timerId = setInterval(() => {
-    qs.timeLeft--; // 전역 상태의 시간을 깎음
+    qs.timeLeft--; // 이제 정상적으로 숫자가 감소합니다.
     const timerBar = document.getElementById('timer-bar');
     
     if (timerBar) {
+      // 현재 남은 시간 비율 계산
       const percentage = Math.max(0, (qs.timeLeft / qs.timeLimit) * 100);
       timerBar.style.width = percentage + '%';
     }
 
     if (qs.timeLeft <= 0) {
       clearInterval(qs.timerId);
-      handleTimeOut(qs.order[qs.q].def); // 정답 전달
+      handleTimeOut(qs.order[qs.q].def); // 시간 초과 처리
     }
   }, 1000);
 }
@@ -1133,6 +1132,7 @@ window.answerQuiz = function(el, chosen, correct) {
 let matchState = null;
 
 // 1. 게임 시작 (전체 단어를 준비하고 셔플)
+// 1. 게임 시작 (전체 단어를 준비하고 셔플)
 async function startMatch() {
   const set = sets[currentSetIndex];
   if (set.cards.length < 2) {
@@ -1140,7 +1140,6 @@ async function startMatch() {
     return;
   }
 
-  // 제한 시간 설정 불러오기 (Firestore 또는 로컬스토리지)
   let initialTime = 10; 
   if (currentUser && currentUser.username) {
     try {
@@ -1155,22 +1154,23 @@ async function startMatch() {
     if (savedTime) initialTime = parseInt(savedTime, 10);
   }
 
-  // 규칙 1: 세트의 모든 단어가 중복 없이 등장하도록 전체 카드를 섞음
   const allShuffledCards = [...set.cards].sort(() => Math.random() - 0.5);
 
+  // ⭐️ [수정] timeLeft 프로퍼티를 initialTime으로 함께 초기화합니다.
   matchState = {
-    allCards: allShuffledCards, // 전체 단어 목록
-    currentIndex: 0,            // 현재 몇 번째 단어까지 진행했는지 고유 인덱스
-    currentTerms: [],           // 이번 라운드 왼쪽 용어들
-    currentDefs: [],            // 이번 라운드 오른쪽 뜻들
+    allCards: allShuffledCards, 
+    currentIndex: 0,            
+    currentTerms: [],           
+    currentDefs: [],            
     selectedCard: null,
     matchedCount: 0,
-    successPairs: 0,            // 전체 게임 중 맞춘 총 개수 누적
+    successPairs: 0,            
     timerId: null,
-    timeLimit: initialTime
+    timeLimit: initialTime,
+    timeLeft: initialTime
   };
 
-  nextMatchRound(); // 첫 번째 라운드 시작
+  nextMatchRound(); 
 }
 
 // 2. 다음 라운드(5개 세트) 준비 함수
@@ -1193,14 +1193,17 @@ function nextMatchRound() {
   ms.currentTerms = roundCards.map(c => ({ id: c.term, text: c.term, type: 'term', pairId: c.def })).sort(() => Math.random() - 0.5);
   ms.currentDefs = roundCards.map(c => ({ id: c.def, text: c.def, type: 'def', pairId: c.term })).sort(() => Math.random() - 0.5);
 
+  ms.timeLeft = ms.timeLimit;
+
   renderMatch();
 }
 
 // 3. 화면 렌더링 및 타이머 가동
 function renderMatch() {
   const ms = matchState;
-  if (ms.timerId) clearInterval(ms.timerId);
+  if (ms.timerId) clearInterval(ms.timerId); // 기존 타이머 클리어
 
+  // 1. 부모 컨테이너의 클래스명을 정의된 스타일인 'match-grid'로 일치시킵니다.
   document.getElementById('mode-content').innerHTML = `
     <div class="match-area">
       <div style="text-align: right; margin-bottom: 10px;">
@@ -1231,21 +1234,39 @@ function renderMatch() {
         <div id="match-timer-bar" class="timer-bar" style="width: 100%;"></div>
       </div>
       
-      <div class="match-columns">
-        <div class="match-col">
-          ${ms.currentTerms.map((c, i) => `
-            <div id="m-card-term-${i}" class="match-card" onclick="selectMatchCard('term', ${i})">${esc(c.text)}</div>
-          `).join('')}
-        </div>
-        <div class="match-col">
-          ${ms.currentDefs.map((c, i) => `
-            <div id="m-card-def-${i}" class="match-card" onclick="selectMatchCard('def', ${i})">${esc(c.text)}</div>
-          `).join('')}
-        </div>
-      </div>
+      <div class="match-grid" id="match-cards-container"></div>
     </div>`;
 
-  let timeLeft = ms.timeLimit;
+  const cardsContainer = document.getElementById('match-cards-container');
+  const maxRoundLength = Math.max(ms.currentTerms.length, ms.currentDefs.length);
+
+  // 2. 단어 1개와 뜻 1개를 교대로 주입하여 그리드의 왼쪽(1열), 오른쪽(2열) 자리를 맞춰줍니다.
+  for (let i = 0; i < maxRoundLength; i++) {
+    // 왼쪽 열에 들어갈 단어 카드 생성
+    if (ms.currentTerms[i]) {
+      const c = ms.currentTerms[i];
+      const cardEl = document.createElement('div');
+      cardEl.id = `m-card-term-${i}`;
+      cardEl.className = 'match-card';
+      cardEl.textContent = c.text;
+      cardEl.onclick = () => selectMatchCard('term', i);
+      cardsContainer.appendChild(cardEl);
+    }
+
+    // 오른쪽 열에 들어갈 뜻 카드 생성
+    if (ms.currentDefs[i]) {
+      const c = ms.currentDefs[i];
+      const cardEl = document.createElement('div');
+      cardEl.id = `m-card-def-${i}`;
+      cardEl.className = 'match-card';
+      cardEl.textContent = c.text;
+      cardEl.onclick = () => selectMatchCard('def', i);
+      cardsContainer.appendChild(cardEl);
+    }
+  }
+
+  // 타이머 실행을 위한 초기화 및 가동
+  ms.timeLeft = ms.timeLimit; 
   runMatchTimer();
 }
 
@@ -1253,8 +1274,10 @@ function runMatchTimer() {
   const ms = matchState;
   if (!ms) return;
 
+  if (ms.timerId) clearInterval(ms.timerId);
+
   ms.timerId = setInterval(() => {
-    ms.timeLeft--; // 전역 상태의 시간을 깎음
+    ms.timeLeft--; // 정상적으로 감소
     const timerBar = document.getElementById('match-timer-bar');
     if (timerBar) {
       const percentage = Math.max(0, (ms.timeLeft / ms.timeLimit) * 100);
@@ -1263,7 +1286,7 @@ function runMatchTimer() {
 
     if (ms.timeLeft <= 0) {
       clearInterval(ms.timerId);
-      alert("시간 초과! 다음 단어로 넘어갑니다.");
+      alert("시간 초과! 다음 라운드로 넘어갑니다.");
       nextMatchRound(); 
     }
   }, 1000);
