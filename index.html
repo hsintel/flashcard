@@ -1016,7 +1016,7 @@ function renderQuiz() {
   const wrong = set.cards.map(c => c.def).filter(d => d !== card.def).sort(() => Math.random() - 0.5).slice(0, 3);
   const opts = [...wrong, card.def].sort(() => Math.random() - 0.5);
   
-  let timeLeft = qs.timeLimit;
+  qs.timeLeft = qs.timeLimit;
   runQuizTimer();
 
   document.getElementById('mode-content').innerHTML = `
@@ -1081,6 +1081,11 @@ function runQuizTimer() {
 
 // 시간 초과 시 실행될 함수 (오답 처리와 동일한 로직)
 window.handleTimeOut = function(correct) {
+
+  if (quizState && quizState.timerId) {
+    clearInterval(quizState.timerId);
+  }
+  
   // 1. 모든 버튼 클릭 차단
   document.querySelectorAll('.quiz-option').forEach(o => {
     o.classList.add('locked');
@@ -1131,7 +1136,6 @@ window.answerQuiz = function(el, chosen, correct) {
 let matchState = null;
 
 // 1. 게임 시작 (전체 단어를 준비하고 셔플)
-// 1. 게임 시작 (전체 단어를 준비하고 셔플)
 async function startMatch() {
   const set = sets[currentSetIndex];
   if (set.cards.length < 2) {
@@ -1146,7 +1150,7 @@ async function startMatch() {
       const snap = await getDocs(q);
       if (!snap.empty) {
         const userData = snap.docs[0].data();
-        // ⭐️ matchTimeLimit 필드 로드
+        // matchTimeLimit 필드 로드
         if (userData.matchTimeLimit !== undefined) {
           initialTime = userData.matchTimeLimit;
         }
