@@ -907,7 +907,7 @@ async function startQuiz() {
       const snap = await getDocs(q);
       if (!snap.empty) {
         const userData = snap.docs[0].data();
-        if (userData.quizTimeLimit) {
+        if (userData.quizTimeLimit !== undefined) {
           initialTime = userData.quizTimeLimit;
         }
       }
@@ -933,50 +933,49 @@ async function startQuiz() {
 }
 
 // 2. 사용자가 시간을 바꿀 때 실시간 수정 및 DB 저장
-window.updateTimeLimit = async function(value) {
+// [추가] 퀴즈 전용 시간 설정 업데이트 (DB: quizTimeLimit)
+window.updateQuizTimeLimit = async function(value) {
   let newTime = parseInt(value, 10);
-  if (isNaN(newTime) || newTime < 1) newTime = 1; 
+  if (isNaN(newTime) || newTime < 1) newTime = 1;
   
-  // 퀴즈 모드 시간 실시간 보정
   if (quizState) {
-    // 늘어난 전체 시간에 맞춰 남은 시간도 자연스럽게 늘려줌 (기존 시간과의 차이만큼 더함)
-    const timeDiff = newTime - quizState.timeLimit;
-    quizState.timeLeft = Math.max(1, quizState.timeLeft + timeDiff);
     quizState.timeLimit = newTime;
-    
-    // 일시 정지 상태이므로 바뀐 비율에 맞게 상태 바의 겉모습만 즉시 업데이트
-    const timerBar = document.getElementById('timer-bar');
-    if (timerBar) {
-      timerBar.style.width = Math.max(0, (quizState.timeLeft / newTime) * 100) + '%';
-    }
   }
-
-  // 동기화 및 DB 저장 로직 (기존 유지)
-  if (currentUser && currentUser.username && currentUser.docId) {
+  
+  if (currentUser && currentUser.username) {
     try {
-      const userDocRef = doc(db, "users", currentUser.docId);
-      await updateDoc(userDocRef, { quizTimeLimit: newTime });
-    } catch (error) { console.error(error); }
+      const q = query(collection(db, 'users'), where('username', '==', currentUser.username));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const docRef = snap.docs[0].ref;
+        await updateDoc(docRef, { quizTimeLimit: newTime }); // quizTimeLimit만 변경
+      }
+    } catch (e) { console.error(e); }
   } else {
     localStorage.setItem('savedQuizTime', newTime);
   }
 };
 
-// 짝 맞추기 모드 입력창 핸들러 수정
-window.updateMatchTimeLimit = function(value) {
-  window.updateTimeLimit(value); 
+// [추가] 짝 맞추기 전용 시간 설정 업데이트 (DB: matchTimeLimit)
+window.updateMatchTimeLimit = async function(value) {
   let newTime = parseInt(value, 10);
   if (isNaN(newTime) || newTime < 1) newTime = 1;
   
   if (matchState) {
-    const timeDiff = newTime - matchState.timeLimit;
-    matchState.timeLeft = Math.max(1, matchState.timeLeft + timeDiff);
     matchState.timeLimit = newTime;
-    
-    const timerBar = document.getElementById('match-timer-bar');
-    if (timerBar) {
-      timerBar.style.width = Math.max(0, (matchState.timeLeft / newTime) * 100) + '%';
-    }
+  }
+  
+  if (currentUser && currentUser.username) {
+    try {
+      const q = query(collection(db, 'users'), where('username', '==', currentUser.username));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const docRef = snap.docs[0].ref;
+        await updateDoc(docRef, { matchTimeLimit: newTime }); // matchTimeLimit만 변경
+      }
+    } catch (e) { console.error(e); }
+  } else {
+    localStorage.setItem('savedMatchTime', newTime);
   }
 };
 
@@ -1035,7 +1034,7 @@ function renderQuiz() {
           <div style="margin: 15px 0;">
             <label for="runtime-timer-input">제한 시간: </label>
             <input type="number" id="runtime-timer-input" value="${qs.timeLimit}" min="1" max="60" 
-                   oninput="updateTimeLimit(this.value)" 
+                   oninput="updateQuizTimeLimit(this.value)" 
                    style="width: 60px; text-align: center; padding: 5px; border: 1px solid #ccc; border-radius: 4px;"> 초
           </div>
           <button class="btn btn-sm btn-primary" onclick="toggleSettingsModal()">닫기</button>
@@ -1064,7 +1063,7 @@ function runQuizTimer() {
   if (qs.timerId) clearInterval(qs.timerId);
 
   qs.timerId = setInterval(() => {
-    qs.timeLeft--; // 이제 정상적으로 숫자가 감소합니다.
+    qs.timeLeft--;
     const timerBar = document.getElementById('timer-bar');
     
     if (timerBar) {
@@ -1140,23 +1139,28 @@ async function startMatch() {
     return;
   }
 
-  let initialTime = 10; 
+  let initialTime = 10; // 기본값
   if (currentUser && currentUser.username) {
     try {
       const q = query(collection(db, 'users'), where('username', '==', currentUser.username));
       const snap = await getDocs(q);
-      if (!snap.empty && snap.docs[0].data().quizTimeLimit) {
-        initialTime = snap.docs[0].data().quizTimeLimit;
+      if (!snap.empty) {
+        const userData = snap.docs[0].data();
+        // ⭐️ matchTimeLimit 필드 로드
+        if (userData.matchTimeLimit !== undefined) {
+          initialTime = userData.matchTimeLimit;
+        }
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error("Firestore에서 짝 맞추기 설정 불러오기 실패:", e); 
+    }
   } else {
-    const savedTime = localStorage.getItem('savedQuizTime');
+    const savedTime = localStorage.getItem('savedMatchTime'); // 로컬스토리지 키 분리
     if (savedTime) initialTime = parseInt(savedTime, 10);
   }
 
   const allShuffledCards = [...set.cards].sort(() => Math.random() - 0.5);
 
-  // ⭐️ [수정] timeLeft 프로퍼티를 initialTime으로 함께 초기화합니다.
   matchState = {
     allCards: allShuffledCards, 
     currentIndex: 0,            
@@ -1286,7 +1290,7 @@ function runMatchTimer() {
 
     if (ms.timeLeft <= 0) {
       clearInterval(ms.timerId);
-      alert("시간 초과! 다음 라운드로 넘어갑니다.");
+      // alert("시간 초과! 다음 라운드로 넘어갑니다.");
       nextMatchRound(); 
     }
   }, 1000);
